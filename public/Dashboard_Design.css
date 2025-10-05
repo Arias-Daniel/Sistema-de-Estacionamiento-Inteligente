@@ -97,9 +97,37 @@ body {
     margin-right: 5px;
 }
 
-footer {
-    background-color: var(--primary-color);
-    color: white;
+/* === ESTILOS DEL FOOTER === */
+
+/* Reemplaza tu 'footer' actual con este 'site-footer' para más especificidad */
+.site-footer {
+    background-color: var(--primary-color); /* Mantenemos tu color primario */
+    color: rgba(255, 255, 255, 0.8); /* Un blanco no tan intenso es más suave a la vista */
+    padding: 2.5rem 0; /* Más espaciado vertical para que respire */
+    font-size: 0.9rem;
+}
+
+.site-footer h5 {
+    color: #ffffff; /* Títulos en blanco puro para que resalten */
+    font-weight: 600;
+    text-transform: uppercase; /* Mayúsculas para un look más formal */
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+}
+
+.site-footer p, .site-footer li {
+    line-height: 1.7;
+}
+
+/* Estilo para la línea separadora */
+.footer-hr {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 1.5rem 0;
+}
+
+.copyright-text {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5); /* Color más tenue para el texto de copyright */
 }
 
 #parkingMap {
