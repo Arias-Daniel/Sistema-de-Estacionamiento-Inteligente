@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./database.js");
 const path = require('path');
-const { Parser } = require('json2csv'); // ÚNICA IMPORTACIÓN, AL PRINCIPIO ✅
+const ExcelJS = require('exceljs'); 
 
 const app = express();
 app.use(cors());
@@ -133,9 +133,12 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// 6. EXPORTAR registros a CSV (con filtros)
+// backend/server.js (NUEVA RUTA DE EXPORTACIÓN)
+
+// 6. EXPORTAR registros a EXCEL (con filtros)
 app.get("/api/records/export", async (req, res) => {
     try {
+        // Esta parte de obtener los datos no cambia
         const { startDate, endDate } = req.query;
         let query = "SELECT * FROM parking_records";
         const params = [];
@@ -146,36 +149,61 @@ app.get("/api/records/export", async (req, res) => {
             query += " WHERE entry_time >= $1 AND entry_time < $2";
             params.push(startDate, endOfDay.toISOString().split('T')[0]);
         }
-
         query += " ORDER BY entry_time DESC";
         const result = await db.query(query, params);
         const records = result.rows;
 
-        const fields = [
-            { label: 'Placa', value: 'license_plate' },
-            { label: 'Hora de Entrada', value: 'entry_time' },
-            { label: 'Hora de Salida', value: 'exit_time' },
-            { label: 'Duración (min)', value: 'duration_minutes' },
-            { label: 'Tarifa', value: 'fee' },
-            { label: 'Estado', value: 'status' }
+        // --- Lógica para crear el archivo Excel ---
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Registros');
+
+        // Definir las columnas y cabeceras
+        worksheet.columns = [
+            { header: 'Placa', key: 'license_plate', width: 15 },
+            { header: 'Hora de Entrada', key: 'entry_time', width: 25 },
+            { header: 'Hora de Salida', key: 'exit_time', width: 25 },
+            { header: 'Duración (min)', key: 'duration_minutes', width: 15 },
+            { header: 'Tarifa', key: 'fee', width: 15, style: { numFmt: '$#,##0' } },
+            { header: 'Estado', key: 'status', width: 20 }
         ];
 
+        // ✨ Añadir un poco de estilo a los encabezados
+        worksheet.getRow(1).eachCell((cell) => {
+            cell.font = { bold: true };
+            cell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE0E0E0' }
+            };
+        });
+
+        // Formatear y añadir los datos a las filas
         const formattedRecords = records.map(r => ({
             ...r,
             entry_time: new Date(r.entry_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }),
-            exit_time: r.exit_time ? new Date(r.exit_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : 'N/A',
-            fee: r.fee ? `$${(r.fee / 1000).toFixed(3)}` : '$0.000' // Ajuste para mostrar en miles
+            exit_time: r.exit_time ? new Date(r.exit_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : 'N/A'
+            // La tarifa se formatea directamente en la definición de la columna
         }));
 
-        const json2csvParser = new Parser({ fields });
-        const csv = json2csvParser.parse(formattedRecords);
+        worksheet.addRows(formattedRecords);
 
-        res.header('Content-Type', 'text/csv');
-        res.attachment(`registros-estacionamiento-${new Date().toISOString().slice(0, 10)}.csv`);
-        res.send(csv);
+        // Configurar la respuesta del servidor para descargar el archivo .xlsx
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename=registros-estacionamiento-${new Date().toISOString().slice(0,10)}.xlsx`
+        );
+
+        // Escribir el libro de Excel en la respuesta
+        await workbook.xlsx.write(res);
+        res.end();
 
     } catch (err) {
-        res.status(500).json({ "error": "Error al generar el archivo CSV: " + err.message });
+        console.error("Error al generar el archivo Excel:", err);
+        res.status(500).send("Error al generar el archivo Excel");
     }
 });
 
