@@ -22,14 +22,14 @@ function calculateFee(entryTime, exitTime) {
     const durationMinutes = Math.ceil((exit - entry) / (1000 * 60));
     
     if (durationMinutes <= 60) {
-        return { fee: 2.00, duration: durationMinutes };
+        return { fee: 2.000, duration: durationMinutes };
     }
 
     const hours = Math.ceil(durationMinutes / 60);
-    let fee = 2.00; // Tarifa primera hora
-    fee += (hours - 1) * 1.50; // Tarifa horas adicionales
+    let fee = 2.000; // Tarifa primera hora
+    fee += (hours - 1) * 1.500; // Tarifa horas adicionales
 
-    const maxFee = 15.00;
+    const maxFee = 15.000;
     return { fee: Math.min(fee, maxFee), duration: durationMinutes };
 }
 
@@ -46,10 +46,31 @@ app.get("/api/parking-status", async (req, res) => {
 });
 
 // 2. Obtener los registros (historial)
+// backend/server.js (Modificar este endpoint)
+
+// 2. Obtener los registros (historial) - AHORA CON FILTROS
 app.get("/api/records", async (req, res) => {
     try {
-        const result = await db.query("SELECT * FROM parking_records ORDER BY entry_time DESC");
+        // Obtenemos los parámetros de la URL, si existen
+        const { startDate, endDate } = req.query;
+
+        let query = "SELECT * FROM parking_records";
+        const params = [];
+
+        if (startDate && endDate) {
+            // Añadimos un día al endDate para que incluya todo el día final
+            const endOfDay = new Date(endDate);
+            endOfDay.setDate(endOfDay.getDate() + 1);
+
+            query += " WHERE entry_time >= $1 AND entry_time < $2";
+            params.push(startDate, endOfDay.toISOString().split('T')[0]);
+        }
+        
+        query += " ORDER BY entry_time DESC";
+
+        const result = await db.query(query, params);
         res.json({ data: result.rows });
+
     } catch (err) {
         res.status(400).json({ "error": err.message });
     }
@@ -129,3 +150,50 @@ app.get("/api/stats", async (req, res) => {
 app.use(function(req, res){
     res.status(404).send("Ruta no encontrada");
 });
+
+// backend/server.js (Añadir esto)
+
+const { Parser } = require('json2csv'); // Importar la librería
+
+// ... (después del app.get("/api/stats", ...))
+
+// 6. EXPORTAR registros a CSV
+app.get("/api/records/export", async (req, res) => {
+    try {
+        const result = await db.query("SELECT * FROM parking_records ORDER BY entry_time DESC");
+        const records = result.rows;
+
+        // Formatear las fechas para que sean más legibles en el CSV
+        const formattedRecords = records.map(r => ({
+            ...r,
+            entry_time: new Date(r.entry_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }),
+            exit_time: r.exit_time ? new Date(r.exit_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : 'N/A',
+            fee: r.fee ? `$${r.fee.toFixed(2)}` : '$0.00'
+        }));
+
+        // Definir las columnas y sus cabeceras
+        const fields = [
+            { label: 'Placa', value: 'license_plate' },
+            { label: 'Hora de Entrada', value: 'entry_time' },
+            { label: 'Hora de Salida', value: 'exit_time' },
+            { label: 'Duración (min)', value: 'duration_minutes' },
+            { label: 'Tarifa', value: 'fee' },
+            { label: 'Estado', value: 'status' }
+        ];
+
+        const json2csvParser = new Parser({ fields });
+        const csv = json2csvParser.parse(formattedRecords);
+
+        // Configurar los headers para que el navegador descargue el archivo
+        res.header('Content-Type', 'text/csv');
+        res.attachment(`registros-estacionamiento-${new Date().toISOString().slice(0,10)}.csv`);
+        res.send(csv);
+
+    } catch (err) {
+        res.status(500).json({ "error": "Error al generar el archivo CSV: " + err.message });
+    }
+});
+
+
+// Endpoint de error por defecto (este debe ir al final)
+// ...

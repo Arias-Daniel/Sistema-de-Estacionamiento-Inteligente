@@ -64,24 +64,40 @@ async function updateStats() {
 }
 
 // 3. Actualizar la tabla de registros
-async function updateRecordsTable() {
+
+// public/Dashboard_Function.js (MODIFICAR esta función)
+
+// 3. Actualizar la tabla de registros (ahora con filtros opcionales)
+async function updateRecordsTable(startDate, endDate) {
     try {
-        const response = await fetch(`${API_URL}/records`);
+        // Construimos la URL con los parámetros de filtro si existen
+        let url = `${API_URL}/records`;
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+
+        const response = await fetch(url); // Usamos la nueva URL
         const { data } = await response.json();
         
         const tbody = document.querySelector('.table tbody');
         tbody.innerHTML = ''; // Limpiar la tabla
 
-        data.forEach(record => {
-            const entryTime = new Date(record.entry_time).toLocaleTimeString();
-            const exitTime = record.exit_time ? new Date(record.exit_time).toLocaleTimeString() : '-';
-            const duration = record.duration_minutes ? `${record.duration_minutes} min` : 'En curso';
-            const fee = record.fee ? `$${record.fee.toFixed(2)}` : '-';
-            const statusBadge = record.status === 'En estacionamiento' 
-                ? '<span class="badge bg-success">En estacionamiento</span>' 
-                : '<span class="badge bg-danger">Completado</span>';
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros para el filtro aplicado.</td></tr>';
+            return;
+        }
 
-            const row = `
+        data.forEach(record => {
+            // ... (el resto de la función sigue igual)
+             const entryTime = new Date(record.entry_time).toLocaleTimeString();
+             const exitTime = record.exit_time ? new Date(record.exit_time).toLocaleTimeString() : '-';
+             const duration = record.duration_minutes ? `${record.duration_minutes} min` : 'En curso';
+             const fee = record.fee ? `$${record.fee.toFixed(2)}` : '-';
+             const statusBadge = record.status === 'En estacionamiento' 
+             ? '<span class="badge bg-success">En estacionamiento</span>' 
+             : '<span class="badge bg-danger">Completado</span>';
+
+             const row = `
                 <tr>
                     <td>${record.license_plate}</td>
                     <td>${entryTime}</td>
@@ -90,8 +106,8 @@ async function updateRecordsTable() {
                     <td>${fee}</td>
                     <td>${statusBadge}</td>
                 </tr>
-            `;
-            tbody.innerHTML += row;
+             `;
+             tbody.innerHTML += row;
         });
     } catch (error) {
         console.error('Error al actualizar la tabla de registros:', error);
@@ -154,3 +170,21 @@ function initializeChart() {
         }
     });
 }
+
+// public/Dashboard_Function.js (Añadir esto al final)
+
+// Manejo del modal de filtro
+const applyFilterBtn = document.getElementById('applyFilterBtn');
+const filterModalEl = document.getElementById('filterModal');
+const filterModal = new bootstrap.Modal(filterModalEl);
+
+applyFilterBtn.addEventListener('click', () => {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    // Actualizamos la tabla con los parámetros de filtro
+    updateRecordsTable(startDate, endDate);
+
+    // Cerramos el modal
+    filterModal.hide();
+});

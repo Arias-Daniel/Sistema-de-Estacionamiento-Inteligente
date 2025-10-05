@@ -263,10 +263,10 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-history me-2"></i> Registro de Entradas y Salidas</span>
                         <div>
-                            <button class="btn btn-sm btn-outline-primary me-2">
+                            <a href="/api/records/export" class="btn btn-sm btn-outline-primary me-2" target="_blank">
                                 <i class="fas fa-download me-1"></i> Exportar
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary">
+                            </a>
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#filterModal">
                                 <i class="fas fa-filter me-1"></i> Filtrar
                             </button>
                         </div>
@@ -333,6 +333,33 @@
             </div>
         </div>
     </div>
+
+<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filterModalLabel"><i class="fas fa-filter me-2"></i> Filtrar Registros</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label">Fecha de Inicio:</label>
+                        <input type="date" class="form-control" id="startDate">
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label">Fecha de Fin:</label>
+                        <input type="date" class="form-control" id="endDate">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="applyFilterBtn">Aplicar Filtro</button>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- Footer -->
 <footer class="site-footer mt-5">
