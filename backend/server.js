@@ -1,8 +1,9 @@
-// backend/server.js (actualizado para PostgreSQL)
+// backend/server.js (CORREGIDO Y ORDENADO)
 const express = require("express");
 const cors = require("cors");
 const db = require("./database.js");
 const path = require('path');
+const { Parser } = require('json2csv'); // ÚNICA IMPORTACIÓN, AL PRINCIPIO ✅
 
 const app = express();
 app.use(cors());
@@ -10,30 +11,25 @@ app.use(express.json());
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
-
-// --- LÓGICA DE TARIFAS (sin cambios) ---
+// --- LÓGICA DE TARIFAS ---
 function calculateFee(entryTime, exitTime) {
     const entry = new Date(entryTime);
     const exit = new Date(exitTime);
     const durationMinutes = Math.ceil((exit - entry) / (1000 * 60));
-    
+
     if (durationMinutes <= 60) {
-        return { fee: 2.000, duration: durationMinutes };
+        return { fee: 2000, duration: durationMinutes }; // Corregido a número entero
     }
 
     const hours = Math.ceil(durationMinutes / 60);
-    let fee = 2.000; // Tarifa primera hora
-    fee += (hours - 1) * 1.500; // Tarifa horas adicionales
+    let fee = 2000; // Tarifa primera hora
+    fee += (hours - 1) * 1500; // Tarifa horas adicionales
 
-    const maxFee = 15.000;
+    const maxFee = 15000;
     return { fee: Math.min(fee, maxFee), duration: durationMinutes };
 }
 
-// --- ENDPOINTS DE LA API (adaptados para PostgreSQL) ---
+// --- ENDPOINTS DE LA API ---
 
 // 1. Obtener el estado de todos los espacios
 app.get("/api/parking-status", async (req, res) => {
@@ -45,32 +41,23 @@ app.get("/api/parking-status", async (req, res) => {
     }
 });
 
-// 2. Obtener los registros (historial)
-// backend/server.js (Modificar este endpoint)
-
-// 2. Obtener los registros (historial) - AHORA CON FILTROS
+// 2. Obtener los registros (historial) con filtros
 app.get("/api/records", async (req, res) => {
     try {
-        // Obtenemos los parámetros de la URL, si existen
         const { startDate, endDate } = req.query;
-
         let query = "SELECT * FROM parking_records";
         const params = [];
 
         if (startDate && endDate) {
-            // Añadimos un día al endDate para que incluya todo el día final
             const endOfDay = new Date(endDate);
             endOfDay.setDate(endOfDay.getDate() + 1);
-
             query += " WHERE entry_time >= $1 AND entry_time < $2";
             params.push(startDate, endOfDay.toISOString().split('T')[0]);
         }
-        
-        query += " ORDER BY entry_time DESC";
 
+        query += " ORDER BY entry_time DESC";
         const result = await db.query(query, params);
         res.json({ data: result.rows });
-
     } catch (err) {
         res.status(400).json({ "error": err.message });
     }
@@ -108,9 +95,9 @@ app.post("/api/exit", async (req, res) => {
         if (!spot || !spot.entry_time) {
             return res.status(400).json({ "error": "No se pudo encontrar el vehículo en ese espacio." });
         }
-        
+
         const { fee, duration } = calculateFee(spot.entry_time, exit_time);
-        
+
         await db.query(
             `UPDATE parking_spots SET is_occupied = false, license_plate = NULL, entry_time = NULL WHERE id = $1`,
             [spot_id]
@@ -131,7 +118,7 @@ app.get("/api/stats", async (req, res) => {
         const occupiedRes = await db.query("SELECT COUNT(*) FROM parking_spots WHERE is_occupied = true");
         const todayEntriesRes = await db.query("SELECT COUNT(*) FROM parking_records WHERE entry_time >= current_date");
         const todayRevenueRes = await db.query("SELECT SUM(fee) as total FROM parking_records WHERE exit_time >= current_date AND status = 'Completado'");
-        
+
         const totalSpots = 8;
         const occupied_spots = parseInt(occupiedRes.rows[0].count, 10);
 
@@ -146,16 +133,10 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// 6. EXPORTAR registros a CSV
-// backend/server.js (MODIFICAR el endpoint de exportación)
-
-const { Parser } = require('json2csv');
-
-// 6. EXPORTAR registros a CSV (ahora con filtros)
+// 6. EXPORTAR registros a CSV (con filtros)
 app.get("/api/records/export", async (req, res) => {
     try {
-        const { startDate, endDate } = req.query; // Leer los filtros
-
+        const { startDate, endDate } = req.query;
         let query = "SELECT * FROM parking_records";
         const params = [];
 
@@ -167,25 +148,30 @@ app.get("/api/records/export", async (req, res) => {
         }
 
         query += " ORDER BY entry_time DESC";
-
-        const result = await db.query(query, params); // Usar la consulta con filtros
+        const result = await db.query(query, params);
         const records = result.rows;
-        
-        // ... (el resto del código para convertir a CSV sigue igual)
-        // Formatear las fechas para que sean más legibles en el CSV
+
+        const fields = [
+            { label: 'Placa', value: 'license_plate' },
+            { label: 'Hora de Entrada', value: 'entry_time' },
+            { label: 'Hora de Salida', value: 'exit_time' },
+            { label: 'Duración (min)', value: 'duration_minutes' },
+            { label: 'Tarifa', value: 'fee' },
+            { label: 'Estado', value: 'status' }
+        ];
+
         const formattedRecords = records.map(r => ({
             ...r,
             entry_time: new Date(r.entry_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }),
             exit_time: r.exit_time ? new Date(r.exit_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : 'N/A',
-            fee: r.fee ? `$${r.fee.toFixed(2)}` : '$0.00'
+            fee: r.fee ? `$${(r.fee / 1000).toFixed(3)}` : '$0.000' // Ajuste para mostrar en miles
         }));
-        
-        const fields = [ /*...*/ ];
+
         const json2csvParser = new Parser({ fields });
         const csv = json2csvParser.parse(formattedRecords);
 
         res.header('Content-Type', 'text/csv');
-        res.attachment(`registros-estacionamiento-${new Date().toISOString().slice(0,10)}.csv`);
+        res.attachment(`registros-estacionamiento-${new Date().toISOString().slice(0, 10)}.csv`);
         res.send(csv);
 
     } catch (err) {
@@ -193,17 +179,13 @@ app.get("/api/records/export", async (req, res) => {
     }
 });
 
-// Endpoint de error por defecto
-app.use(function(req, res){
+// Endpoint de error por defecto (DEBE IR ANTES DE LISTEN)
+app.use(function (req, res) {
     res.status(404).send("Ruta no encontrada");
 });
 
-// backend/server.js (Añadir esto)
-
-const { Parser } = require('json2csv'); // Importar la librería
-
-// ... (después del app.get("/api/stats", ...))
-
-
-// Endpoint de error por defecto (este debe ir al final)
-// ...
+// Iniciar el servidor (DEBE SER LO ÚLTIMO)
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
