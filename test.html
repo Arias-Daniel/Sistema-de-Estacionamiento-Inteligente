@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Estacionamiento Inteligente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: 600;
+        }
+        
+        .parking-spot {
+            width: 100%;
+            height: 100px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .available {
+            background-color: var(--success-color);
+        }
+        
+        .occupied {
+            background-color: var(--danger-color);
+        }
+        
+        .parking-spot:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .stats-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .table th {
+            background-color: var(--light-color);
+        }
+        
+        .badge-available {
+            background-color: var(--success-color);
+        }
+        
+        .badge-occupied {
+            background-color: var(--danger-color);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        #parkingMap {
+            min-height: 400px;
+        }
+        
+        .recent-activity {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-parking me-2"></i>
+                Sistema de Estacionamiento Inteligente
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-history me-1"></i> Historial</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-cog me-1"></i> Configuración</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Estadísticas rápidas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-number text-success" id="availableSpots">5</div>
+                    <div class="stats-label">Espacios Disponibles</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-number text-danger" id="occupiedSpots">3</div>
+                    <div class="stats-label">Espacios Ocupados</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-number text-primary" id="todayEntries">12</div>
+                    <div class="stats-label">Entradas Hoy</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-number text-warning" id="todayRevenue">$45.00</div>
+                    <div class="stats-label">Ingresos Hoy</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Mapa de Estacionamiento -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-map me-2"></i> Mapa de Estacionamiento en Tiempo Real</span>
+                        <div>
+                            <span class="status-indicator bg-success"></span> Disponible
+                            <span class="status-indicator bg-danger ms-2"></span> Ocupado
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="parkingMap" class="p-3">
+                            <div class="row g-3">
+                                <!-- Fila 1 -->
+                                <div class="col-md-3">
+                                    <div class="parking-spot available" data-spot="1">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 1</div>
+                                            <small>Disponible</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="parking-spot occupied" data-spot="2">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 2</div>
+                                            <small>ABC-123</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="parking-spot available" data-spot="3">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 3</div>
+                                            <small>Disponible</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="parking-spot available" data-spot="4">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 4</div>
+                                            <small>Disponible</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Fila 2 -->
+                                <div class="col-md-3">
+                                    <div class="parking-spot occupied" data-spot="5">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 5</div>
+                                            <small>XYZ-789</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="parking-spot available" data-spot="6">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 6</div>
+                                            <small>Disponible</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="parking-spot occupied" data-spot="7">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 7</div>
+                                            <small>DEF-456</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="parking-spot available" data-spot="8">
+                                        <div class="text-center">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <div>Espacio 8</div>
+                                            <small>Disponible</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Gráfico de Ocupación -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line me-2"></i> Ocupación en Tiempo Real
+                    </div>
+                    <div class="card-body">
+                        <canvas id="occupancyChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de Información -->
+            <div class="col-lg-4">
+                <!-- Actividad Reciente -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-list me-2"></i> Actividad Reciente
+                    </div>
+                    <div class="card-body recent-activity">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">ABC-123</div>
+                                    <small class="text-muted">Entrada: 09:15 AM</small>
+                                </div>
+                                <span class="badge bg-success">Entrada</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">XYZ-789</div>
+                                    <small class="text-muted">Salida: 09:30 AM</small>
+                                </div>
+                                <span class="badge bg-danger">Salida</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">DEF-456</div>
+                                    <small class="text-muted">Entrada: 10:05 AM</small>
+                                </div>
+                                <span class="badge bg-success">Entrada</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">GHI-101</div>
+                                    <small class="text-muted">Salida: 10:20 AM</small>
+                                </div>
+                                <span class="badge bg-danger">Salida</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-bold">JKL-112</div>
+                                    <small class="text-muted">Entrada: 10:45 AM</small>
+                                </div>
+                                <span class="badge bg-success">Entrada</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Información de Precios -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-dollar-sign me-2"></i> Información de Tarifas
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6>Tarifa Base</h6>
+                            <p>$2.00 por la primera hora</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Tarifa por Hora Adicional</h6>
+                            <p>$1.50 por cada hora adicional</p>
+                        </div>
+                        <div>
+                            <h6>Tarifa Máxima Diaria</h6>
+                            <p>$15.00 por día</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detalles de Vehículo Actual -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-car me-2"></i> Detalles del Vehículo Seleccionado
+                    </div>
+                    <div class="card-body">
+                        <div id="vehicleDetails" class="text-center text-muted">
+                            <i class="fas fa-mouse-pointer fa-2x mb-3"></i>
+                            <p>Selecciona un espacio de estacionamiento para ver los detalles</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Registro de Entradas y Salidas -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-history me-2"></i> Registro de Entradas y Salidas</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-download me-1"></i> Exportar
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-filter me-1"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Placa</th>
+                                        <th>Hora de Entrada</th>
+                                        <th>Hora de Salida</th>
+                                        <th>Duración</th>
+                                        <th>Tarifa</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>ABC-123</td>
+                                        <td>09:15 AM</td>
+                                        <td>-</td>
+                                        <td>En curso</td>
+                                        <td>-</td>
+                                        <td><span class="badge bg-success">En estacionamiento</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>XYZ-789</td>
+                                        <td>08:00 AM</td>
+                                        <td>09:30 AM</td>
+                                        <td>1h 30m</td>
+                                        <td>$3.50</td>
+                                        <td><span class="badge bg-danger">Completado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>DEF-456</td>
+                                        <td>10:05 AM</td>
+                                        <td>-</td>
+                                        <td>En curso</td>
+                                        <td>-</td>
+                                        <td><span class="badge bg-success">En estacionamiento</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>GHI-101</td>
+                                        <td>07:30 AM</td>
+                                        <td>10:20 AM</td>
+                                        <td>2h 50m</td>
+                                        <td>$5.75</td>
+                                        <td><span class="badge bg-danger">Completado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>JKL-112</td>
+                                        <td>10:45 AM</td>
+                                        <td>-</td>
+                                        <td>En curso</td>
+                                        <td>-</td>
+                                        <td><span class="badge bg-success">En estacionamiento</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-3">
+        <div class="container text-center">
+            <p class="mb-0">Sistema de Estacionamiento Inteligente con Reconocimiento de Placas</p>
+            <p class="mb-0">Desarrollado por: Camilo Andres Arenillas, Daniel Enrique Arias, Abraham José Gómez, Cesar Stiven Hernandez</p>
+            <p class="mb-0">Docente: Rebeca Rosa Viloria Amaya - Asignatura: Sensores y Actuadores</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Inicializar gráfico de ocupación
+        const ctx = document.getElementById('occupancyChart').getContext('2d');
+        const occupancyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00'],
+                datasets: [{
+                    label: 'Espacios Ocupados',
+                    data: [2, 4, 3, 5, 6, 7, 8],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Ocupación por Hora'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 8,
+                        title: {
+                            display: true,
+                            text: 'Espacios Ocupados'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Hora del Día'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Simular cambios en tiempo real
+        function updateParkingStatus() {
+            // Simular cambio aleatorio de estado cada 10 segundos
+            setTimeout(() => {
+                const spots = document.querySelectorAll('.parking-spot');
+                const randomSpot = Math.floor(Math.random() * spots.length);
+                
+                if (spots[randomSpot].classList.contains('available')) {
+                    spots[randomSpot].classList.remove('available');
+                    spots[randomSpot].classList.add('occupied');
+                    spots[randomSpot].querySelector('small').textContent = 'PLACA-' + (100 + Math.floor(Math.random() * 900));
+                } else {
+                    spots[randomSpot].classList.remove('occupied');
+                    spots[randomSpot].classList.add('available');
+                    spots[randomSpot].querySelector('small').textContent = 'Disponible';
+                }
+                
+                // Actualizar contadores
+                const availableCount = document.querySelectorAll('.available').length;
+                const occupiedCount = document.querySelectorAll('.occupied').length;
+                
+                document.getElementById('availableSpots').textContent = availableCount;
+                document.getElementById('occupiedSpots').textContent = occupiedCount;
+                
+                // Llamar recursivamente para continuar la simulación
+                updateParkingStatus();
+            }, 10000); // Cambiar cada 10 segundos
+        }
+        
+        // Iniciar simulación
+        updateParkingStatus();
+        
+        // Manejar clic en espacios de estacionamiento
+        document.querySelectorAll('.parking-spot').forEach(spot => {
+            spot.addEventListener('click', function() {
+                const spotNumber = this.getAttribute('data-spot');
+                const isOccupied = this.classList.contains('occupied');
+                const licensePlate = isOccupied ? this.querySelector('small').textContent : 'N/A';
+                
+                document.getElementById('vehicleDetails').innerHTML = `
+                    <h5>Espacio ${spotNumber}</h5>
+                    <p class="mb-2"><strong>Estado:</strong> ${isOccupied ? 'Ocupado' : 'Disponible'}</p>
+                    ${isOccupied ? `<p class="mb-2"><strong>Placa:</strong> ${licensePlate}</p>` : ''}
+                    <p class="mb-2"><strong>Tiempo estacionado:</strong> ${isOccupied ? '45 minutos' : 'N/A'}</p>
+                    ${isOccupied ? `<p class="mb-0"><strong>Tarifa acumulada:</strong> $1.50</p>` : ''}
+                `;
+            });
+        });
+    </script>
+</body>
+</html>
