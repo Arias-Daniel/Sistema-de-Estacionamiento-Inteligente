@@ -147,11 +147,31 @@ app.get("/api/stats", async (req, res) => {
 });
 
 // 6. EXPORTAR registros a CSV
+// backend/server.js (MODIFICAR el endpoint de exportación)
+
+const { Parser } = require('json2csv');
+
+// 6. EXPORTAR registros a CSV (ahora con filtros)
 app.get("/api/records/export", async (req, res) => {
     try {
-        const result = await db.query("SELECT * FROM parking_records ORDER BY entry_time DESC");
-        const records = result.rows;
+        const { startDate, endDate } = req.query; // Leer los filtros
 
+        let query = "SELECT * FROM parking_records";
+        const params = [];
+
+        if (startDate && endDate) {
+            const endOfDay = new Date(endDate);
+            endOfDay.setDate(endOfDay.getDate() + 1);
+            query += " WHERE entry_time >= $1 AND entry_time < $2";
+            params.push(startDate, endOfDay.toISOString().split('T')[0]);
+        }
+
+        query += " ORDER BY entry_time DESC";
+
+        const result = await db.query(query, params); // Usar la consulta con filtros
+        const records = result.rows;
+        
+        // ... (el resto del código para convertir a CSV sigue igual)
         // Formatear las fechas para que sean más legibles en el CSV
         const formattedRecords = records.map(r => ({
             ...r,
@@ -159,21 +179,11 @@ app.get("/api/records/export", async (req, res) => {
             exit_time: r.exit_time ? new Date(r.exit_time).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : 'N/A',
             fee: r.fee ? `$${r.fee.toFixed(2)}` : '$0.00'
         }));
-
-        // Definir las columnas y sus cabeceras
-        const fields = [
-            { label: 'Placa', value: 'license_plate' },
-            { label: 'Hora de Entrada', value: 'entry_time' },
-            { label: 'Hora de Salida', value: 'exit_time' },
-            { label: 'Duración (min)', value: 'duration_minutes' },
-            { label: 'Tarifa', value: 'fee' },
-            { label: 'Estado', value: 'status' }
-        ];
-
+        
+        const fields = [ /*...*/ ];
         const json2csvParser = new Parser({ fields });
         const csv = json2csvParser.parse(formattedRecords);
 
-        // Configurar los headers para que el navegador descargue el archivo
         res.header('Content-Type', 'text/csv');
         res.attachment(`registros-estacionamiento-${new Date().toISOString().slice(0,10)}.csv`);
         res.send(csv);

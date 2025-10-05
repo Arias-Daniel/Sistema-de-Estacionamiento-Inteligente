@@ -1,3 +1,6 @@
+let currentStartDate = null;
+let currentEndDate = null;
+
 // backend/Dashboard_Function.js (corregido)
 
 const API_URL = '/api';
@@ -174,17 +177,30 @@ function initializeChart() {
 // public/Dashboard_Function.js (Añadir esto al final)
 
 // Manejo del modal de filtro
-const applyFilterBtn = document.getElementById('applyFilterBtn');
-const filterModalEl = document.getElementById('filterModal');
-const filterModal = new bootstrap.Modal(filterModalEl);
-
 applyFilterBtn.addEventListener('click', () => {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
-    // Actualizamos la tabla con los parámetros de filtro
-    updateRecordsTable(startDate, endDate);
+    // Guardamos los valores actuales del filtro
+    currentStartDate = startDate;
+    currentEndDate = endDate;
 
-    // Cerramos el modal
+    updateRecordsTable(startDate, endDate);
     filterModal.hide();
+});
+
+// AÑADE este nuevo código al final del archivo para manejar el clic en el botón de exportar
+const exportBtn = document.getElementById('exportBtn');
+exportBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // Evita que el enlace navegue a "#"
+
+    let exportUrl = '/api/records/export';
+
+    // Si hay filtros aplicados, los añadimos a la URL
+    if (currentStartDate && currentEndDate) {
+        exportUrl += `?startDate=${currentStartDate}&endDate=${currentEndDate}`;
+    }
+
+    // Redirigimos al usuario a la URL de exportación, lo que iniciará la descarga
+    window.location.href = exportUrl;
 });
