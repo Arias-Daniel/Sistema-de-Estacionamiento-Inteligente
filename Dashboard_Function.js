@@ -1,6 +1,6 @@
-// backend/Dashboard_Function.js (actualizado)
+// backend/Dashboard_Function.js (corregido)
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Carga inicial de datos

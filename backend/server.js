@@ -1,4 +1,4 @@
-// backend/server.js
+// backend/server.js (actualizado para PostgreSQL)
 const express = require("express");
 const cors = require("cors");
 const db = require("./database.js");
@@ -7,12 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const HTTP_PORT = 8000;
-app.listen(HTTP_PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${HTTP_PORT}`);
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
 
-// --- LÓGICA DE TARIFAS ---
+// --- LÓGICA DE TARIFAS (sin cambios) ---
 function calculateFee(entryTime, exitTime) {
     const entry = new Date(entryTime);
     const exit = new Date(exitTime);
@@ -30,114 +30,99 @@ function calculateFee(entryTime, exitTime) {
     return { fee: Math.min(fee, maxFee), duration: durationMinutes };
 }
 
-// --- ENDPOINTS DE LA API ---
+// --- ENDPOINTS DE LA API (adaptados para PostgreSQL) ---
 
 // 1. Obtener el estado de todos los espacios
-app.get("/api/parking-status", (req, res) => {
-    const sql = "SELECT * FROM parking_spots ORDER BY id";
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ data: rows });
-    });
+app.get("/api/parking-status", async (req, res) => {
+    try {
+        const result = await db.query("SELECT * FROM parking_spots ORDER BY id");
+        res.json({ data: result.rows });
+    } catch (err) {
+        res.status(400).json({ "error": err.message });
+    }
 });
 
 // 2. Obtener los registros (historial)
-app.get("/api/records", (req, res) => {
-    const sql = "SELECT * FROM parking_records ORDER BY entry_time DESC";
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ data: rows });
-    });
+app.get("/api/records", async (req, res) => {
+    try {
+        const result = await db.query("SELECT * FROM parking_records ORDER BY entry_time DESC");
+        res.json({ data: result.rows });
+    } catch (err) {
+        res.status(400).json({ "error": err.message });
+    }
 });
 
 // 3. Registrar una ENTRADA de vehículo
-app.post("/api/entry", (req, res) => {
+app.post("/api/entry", async (req, res) => {
     const { spot_id, license_plate } = req.body;
-    const entry_time = new Date().toISOString();
+    const entry_time = new Date();
 
-    const updateSpotSql = `UPDATE parking_spots SET is_occupied = 1, license_plate = ?, entry_time = ? WHERE id = ?`;
-    db.run(updateSpotSql, [license_plate, entry_time, spot_id], function(err) {
-        if (err) {
-            return res.status(400).json({ "error": err.message });
-        }
-        // Crear registro en el historial
-        const insertRecordSql = `INSERT INTO parking_records (license_plate, entry_time, status) VALUES (?, ?, 'En estacionamiento')`;
-        db.run(insertRecordSql, [license_plate, entry_time], function(err) {
-            if (err) {
-                return res.status(400).json({ "error": err.message });
-            }
-            res.json({ message: "Entrada registrada con éxito", spot_id, license_plate });
-        });
-    });
+    try {
+        await db.query(
+            `UPDATE parking_spots SET is_occupied = true, license_plate = $1, entry_time = $2 WHERE id = $3`,
+            [license_plate, entry_time, spot_id]
+        );
+        await db.query(
+            `INSERT INTO parking_records (license_plate, entry_time, status) VALUES ($1, $2, 'En estacionamiento')`,
+            [license_plate, entry_time]
+        );
+        res.json({ message: "Entrada registrada con éxito", spot_id, license_plate });
+    } catch (err) {
+        res.status(400).json({ "error": err.message });
+    }
 });
 
 // 4. Registrar una SALIDA de vehículo
-app.post("/api/exit", (req, res) => {
+app.post("/api/exit", async (req, res) => {
     const { spot_id } = req.body;
-    const exit_time = new Date().toISOString();
+    const exit_time = new Date();
 
-    // Obtener datos del vehículo que sale
-    const getSpotSql = "SELECT license_plate, entry_time FROM parking_spots WHERE id = ?";
-    db.get(getSpotSql, [spot_id], (err, spot) => {
-        if (err || !spot || !spot.entry_time) {
+    try {
+        const spotResult = await db.query("SELECT license_plate, entry_time FROM parking_spots WHERE id = $1", [spot_id]);
+        const spot = spotResult.rows[0];
+
+        if (!spot || !spot.entry_time) {
             return res.status(400).json({ "error": "No se pudo encontrar el vehículo en ese espacio." });
         }
         
         const { fee, duration } = calculateFee(spot.entry_time, exit_time);
         
-        // Actualizar el espacio a disponible
-        const updateSpotSql = `UPDATE parking_spots SET is_occupied = 0, license_plate = NULL, entry_time = NULL WHERE id = ?`;
-        db.run(updateSpotSql, [spot_id], function(err) {
-            if (err) {
-                return res.status(400).json({ "error": err.message });
-            }
-            // Actualizar el registro en el historial
-            const updateRecordSql = `UPDATE parking_records SET exit_time = ?, duration_minutes = ?, fee = ?, status = 'Completado' WHERE license_plate = ? AND status = 'En estacionamiento'`;
-            db.run(updateRecordSql, [exit_time, duration, fee, spot.license_plate], function(err) {
-                if (err) {
-                    return res.status(400).json({ "error": err.message });
-                }
-                res.json({ message: "Salida registrada con éxito", license_plate: spot.license_plate, fee, duration });
-            });
-        });
-    });
+        await db.query(
+            `UPDATE parking_spots SET is_occupied = false, license_plate = NULL, entry_time = NULL WHERE id = $1`,
+            [spot_id]
+        );
+        await db.query(
+            `UPDATE parking_records SET exit_time = $1, duration_minutes = $2, fee = $3, status = 'Completado' WHERE license_plate = $4 AND status = 'En estacionamiento'`,
+            [exit_time, duration, fee, spot.license_plate]
+        );
+        res.json({ message: "Salida registrada con éxito", license_plate: spot.license_plate, fee, duration });
+    } catch (err) {
+        res.status(400).json({ "error": err.message });
+    }
 });
 
 // 5. Endpoint para las estadísticas rápidas
-app.get("/api/stats", (req, res) => {
-    const today = new Date().toISOString().slice(0, 10); // Formato YYYY-MM-DD
+app.get("/api/stats", async (req, res) => {
+    try {
+        const occupiedRes = await db.query("SELECT COUNT(*) FROM parking_spots WHERE is_occupied = true");
+        const todayEntriesRes = await db.query("SELECT COUNT(*) FROM parking_records WHERE entry_time >= current_date");
+        const todayRevenueRes = await db.query("SELECT SUM(fee) as total FROM parking_records WHERE exit_time >= current_date AND status = 'Completado'");
+        
+        const totalSpots = 8;
+        const occupied_spots = parseInt(occupiedRes.rows[0].count, 10);
 
-    const queries = {
-        occupied: "SELECT COUNT(*) as count FROM parking_spots WHERE is_occupied = 1",
-        available: "SELECT COUNT(*) as count FROM parking_spots WHERE is_occupied = 0",
-        todayEntries: `SELECT COUNT(*) as count FROM parking_records WHERE date(entry_time) = ?`,
-        todayRevenue: `SELECT SUM(fee) as total FROM parking_records WHERE date(exit_time) = ? AND status = 'Completado'`
-    };
-
-    db.get(queries.occupied, [], (err, occupied) => {
-    db.get(queries.available, [], (err, available) => {
-    db.get(queries.todayEntries, [today], (err, entries) => {
-    db.get(queries.todayRevenue, [today], (err, revenue) => {
         res.json({
-            occupied_spots: occupied.count,
-            available_spots: available.count,
-            today_entries: entries.count,
-            today_revenue: revenue.total || 0
+            occupied_spots: occupied_spots,
+            available_spots: totalSpots - occupied_spots,
+            today_entries: parseInt(todayEntriesRes.rows[0].count, 10),
+            today_revenue: parseFloat(todayRevenueRes.rows[0].total) || 0
         });
-    });
-    });
-    });
-    });
+    } catch (err) {
+        res.status(400).json({ "error": err.message });
+    }
 });
-
 
 // Endpoint de error por defecto
 app.use(function(req, res){
-    res.status(404);
+    res.status(404).send("Ruta no encontrada");
 });
