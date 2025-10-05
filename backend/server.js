@@ -146,17 +146,6 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// Endpoint de error por defecto
-app.use(function(req, res){
-    res.status(404).send("Ruta no encontrada");
-});
-
-// backend/server.js (Añadir esto)
-
-const { Parser } = require('json2csv'); // Importar la librería
-
-// ... (después del app.get("/api/stats", ...))
-
 // 6. EXPORTAR registros a CSV
 app.get("/api/records/export", async (req, res) => {
     try {
@@ -193,6 +182,17 @@ app.get("/api/records/export", async (req, res) => {
         res.status(500).json({ "error": "Error al generar el archivo CSV: " + err.message });
     }
 });
+
+// Endpoint de error por defecto
+app.use(function(req, res){
+    res.status(404).send("Ruta no encontrada");
+});
+
+// backend/server.js (Añadir esto)
+
+const { Parser } = require('json2csv'); // Importar la librería
+
+// ... (después del app.get("/api/stats", ...))
 
 
 // Endpoint de error por defecto (este debe ir al final)
