@@ -1,11 +1,12 @@
-// backend/database.js (actualizado para PostgreSQL)
+// backend/database.js (MODIFICADO PARA CONEXIÓN LOCAL)
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Render provee esta variable automáticamente
-  ssl: {
-    rejectUnauthorized: false
-  }
+    user: 'parking_user',          
+    host: 'localhost',            
+    database: 'estacionamiento_db', 
+    password: '@parking321', 
+    port: 5432,                    // El puerto por defecto de PostgreSQL
 });
 
 const initializeDatabase = async () => {
