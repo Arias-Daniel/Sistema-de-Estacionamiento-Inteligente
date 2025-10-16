@@ -1,20 +1,19 @@
-// backend/database.js - MODIFICADO PARA CONECTAR SIEMPRE A LA NUBE
+// backend/database.js - MODIFICADO CON LA SOLUCIÓN
+
 const { Pool } = require('pg');
 
-// 1. Verificamos si la variable de entorno DATABASE_URL existe.
-// Si no existe, la aplicación se detendrá con un error, lo cual es bueno
-// porque nos obliga a configurarla correctamente.
 if (!process.env.DATABASE_URL) {
   throw new Error("Error: La variable de entorno DATABASE_URL no está definida.");
 }
 
-// 2. Creamos la configuración de la base de datos directamente
-// desde la variable de entorno.
 const dbConfig = {
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  // --- AÑADE ESTA LÍNEA ---
+  family: 4, 
+  // -------------------------
 };
 
 // 3. Creamos la instancia del Pool con la configuración.
