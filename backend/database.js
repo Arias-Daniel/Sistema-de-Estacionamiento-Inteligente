@@ -11,12 +11,11 @@ const dbConfig = {
   ssl: {
     rejectUnauthorized: false
   },
-  // --- AÑADE ESTA LÍNEA ---
+  // --- AÑADE ESTA LÍNEA (SI NO ESTÁ) ---
   family: 4, 
-  // -------------------------
+  // ------------------------------------
 };
 
-// 3. Creamos la instancia del Pool con la configuración.
 const pool = new Pool(dbConfig);
 
 const initializeDatabase = async () => {
