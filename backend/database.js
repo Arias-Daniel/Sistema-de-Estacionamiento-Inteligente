@@ -1,13 +1,24 @@
-// backend/database.js (MODIFICADO PARA CONEXIÓN LOCAL)
+// backend/database.js - MODIFICADO PARA CONECTAR SIEMPRE A LA NUBE
 const { Pool } = require('pg');
 
-const pool = new Pool({
-    user: 'parking_user',          
-    host: 'localhost',            
-    database: 'estacionamiento_db', 
-    password: '@parking321', 
-    port: 5432,                    // El puerto por defecto de PostgreSQL
-});
+// 1. Verificamos si la variable de entorno DATABASE_URL existe.
+// Si no existe, la aplicación se detendrá con un error, lo cual es bueno
+// porque nos obliga a configurarla correctamente.
+if (!process.env.DATABASE_URL) {
+  throw new Error("Error: La variable de entorno DATABASE_URL no está definida.");
+}
+
+// 2. Creamos la configuración de la base de datos directamente
+// desde la variable de entorno.
+const dbConfig = {
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+};
+
+// 3. Creamos la instancia del Pool con la configuración.
+const pool = new Pool(dbConfig);
 
 const initializeDatabase = async () => {
   const client = await pool.connect();
