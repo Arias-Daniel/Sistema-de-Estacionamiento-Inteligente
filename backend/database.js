@@ -1,22 +1,12 @@
-// backend/database.js - MODIFICADO CON LA SOLUCIÓN
-
+// backend/database.js (actualizado para PostgreSQL)
 const { Pool } = require('pg');
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("Error: La variable de entorno DATABASE_URL no está definida.");
-}
-
-const dbConfig = {
-  connectionString: process.env.DATABASE_URL,
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // Render provee esta variable automáticamente
   ssl: {
     rejectUnauthorized: false
-  },
-  // --- AÑADE ESTA LÍNEA (SI NO ESTÁ) ---
-  family: 4, 
-  // ------------------------------------
-};
-
-const pool = new Pool(dbConfig);
+  }
+});
 
 const initializeDatabase = async () => {
   const client = await pool.connect();
