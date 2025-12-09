@@ -9,10 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link href="Dashboard_Design.css" rel="stylesheet">
-
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="#">
@@ -39,36 +37,34 @@
     </nav>
 
     <div class="container mt-4">
-        <!-- Estadísticas rápidas -->
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card stats-card">
-                    <div class="stats-number text-success" id="availableSpots">5</div>
+                    <div class="stats-number text-success" id="availableSpots">8</div>
                     <div class="stats-label">Espacios Disponibles</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card stats-card">
-                    <div class="stats-number text-danger" id="occupiedSpots">3</div>
+                    <div class="stats-number text-danger" id="occupiedSpots">0</div>
                     <div class="stats-label">Espacios Ocupados</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card stats-card">
-                    <div class="stats-number text-primary" id="todayEntries">12</div>
+                    <div class="stats-number text-primary" id="todayEntries">0</div>
                     <div class="stats-label">Entradas Hoy</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card stats-card">
-                    <div class="stats-number text-warning" id="todayRevenue">$45.000</div>
+                    <div class="stats-number text-warning" id="todayRevenue">$0</div>
                     <div class="stats-label">Ingresos Hoy</div>
                 </div>
             </div>
         </div>
 
         <div class="row">
-            <!-- Mapa de Estacionamiento -->
             <div class="col-lg-8">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -81,7 +77,6 @@
                     <div class="card-body">
                         <div id="parkingMap" class="p-3">
                             <div class="row g-3">
-                                <!-- Fila 1 -->
                                 <div class="col-md-3">
                                     <div class="parking-spot available" data-spot="1">
                                         <div class="text-center">
@@ -92,11 +87,11 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="parking-spot occupied" data-spot="2">
+                                    <div class="parking-spot available" data-spot="2">
                                         <div class="text-center">
                                             <i class="fas fa-car fa-2x mb-2"></i>
                                             <div>Espacio 2</div>
-                                            <small>ABC-123</small>
+                                            <small>Disponible</small>
                                         </div>
                                     </div>
                                 </div>
@@ -119,13 +114,12 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Fila 2 -->
                                 <div class="col-md-3">
-                                    <div class="parking-spot occupied" data-spot="5">
+                                    <div class="parking-spot available" data-spot="5">
                                         <div class="text-center">
                                             <i class="fas fa-car fa-2x mb-2"></i>
                                             <div>Espacio 5</div>
-                                            <small>XYZ-789</small>
+                                            <small>Disponible</small>
                                         </div>
                                     </div>
                                 </div>
@@ -139,11 +133,11 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="parking-spot occupied" data-spot="7">
+                                    <div class="parking-spot available" data-spot="7">
                                         <div class="text-center">
                                             <i class="fas fa-car fa-2x mb-2"></i>
                                             <div>Espacio 7</div>
-                                            <small>DEF-456</small>
+                                            <small>Disponible</small>
                                         </div>
                                     </div>
                                 </div>
@@ -161,7 +155,6 @@
                     </div>
                 </div>
                 
-                <!-- Gráfico de Ocupación -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <i class="fas fa-chart-line me-2"></i> Ocupación en Tiempo Real
@@ -172,55 +165,20 @@
                 </div>
             </div>
             
-            <!-- Panel de Información -->
             <div class="col-lg-4">
-                <!-- Actividad Reciente -->
                 <div class="card">
                     <div class="card-header">
                         <i class="fas fa-list me-2"></i> Actividad Reciente
                     </div>
                     <div class="card-body recent-activity">
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold">ABC-123</div>
-                                    <small class="text-muted">Entrada: 09:15 AM</small>
-                                </div>
-                                <span class="badge bg-success">Entrada</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold">XYZ-789</div>
-                                    <small class="text-muted">Salida: 09:30 AM</small>
-                                </div>
-                                <span class="badge bg-danger">Salida</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold">DEF-456</div>
-                                    <small class="text-muted">Entrada: 10:05 AM</small>
-                                </div>
-                                <span class="badge bg-success">Entrada</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold">GHI-101</div>
-                                    <small class="text-muted">Salida: 10:20 AM</small>
-                                </div>
-                                <span class="badge bg-danger">Salida</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="fw-bold">JKL-112</div>
-                                    <small class="text-muted">Entrada: 10:45 AM</small>
-                                </div>
-                                <span class="badge bg-success">Entrada</span>
+                            <li class="list-group-item text-center text-muted">
+                                Esperando nuevos registros...
                             </li>
                         </ul>
                     </div>
                 </div>
                 
-                <!-- Información de Precios -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <i class="fas fa-dollar-sign me-2"></i> Información de Tarifas
@@ -241,7 +199,6 @@
                     </div>
                 </div>
                 
-                <!-- Detalles de Vehículo Actual -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <i class="fas fa-car me-2"></i> Detalles del Vehículo Seleccionado
@@ -256,7 +213,6 @@
             </div>
         </div>
         
-        <!-- Registro de Entradas y Salidas -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
@@ -285,47 +241,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>ABC-123</td>
-                                        <td>09:15 AM</td>
-                                        <td>-</td>
-                                        <td>En curso</td>
-                                        <td>-</td>
-                                        <td><span class="badge bg-success">En estacionamiento</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>XYZ-789</td>
-                                        <td>08:00 AM</td>
-                                        <td>09:30 AM</td>
-                                        <td>1h 30m</td>
-                                        <td>$3.50</td>
-                                        <td><span class="badge bg-danger">Completado</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>DEF-456</td>
-                                        <td>10:05 AM</td>
-                                        <td>-</td>
-                                        <td>En curso</td>
-                                        <td>-</td>
-                                        <td><span class="badge bg-success">En estacionamiento</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>GHI-101</td>
-                                        <td>07:30 AM</td>
-                                        <td>10:20 AM</td>
-                                        <td>2h 50m</td>
-                                        <td>$5.75</td>
-                                        <td><span class="badge bg-danger">Completado</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>JKL-112</td>
-                                        <td>10:45 AM</td>
-                                        <td>-</td>
-                                        <td>En curso</td>
-                                        <td>-</td>
-                                        <td><span class="badge bg-success">En estacionamiento</span></td>
-                                    </tr>
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                     </div>
@@ -334,69 +250,68 @@
         </div>
     </div>
 
-<div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="filterModalLabel"><i class="fas fa-filter me-2"></i> Filtrar Registros</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="filterForm">
-                    <div class="mb-3">
-                        <label for="startDate" class="form-label">Fecha de Inicio:</label>
-                        <input type="date" class="form-control" id="startDate">
-                    </div>
-                    <div class="mb-3">
-                        <label for="endDate" class="form-label">Fecha de Fin:</label>
-                        <input type="date" class="form-control" id="endDate">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="applyFilterBtn">Aplicar Filtro</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <!-- Footer -->
-<footer class="site-footer mt-5">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 mb-4 mb-md-0">
-                <h5><i class="fas fa-parking me-2"></i> Estacionamiento Inteligente</h5>
-                <p class="text-white-50">
-                    Sistema para el reconocimiento automático de placas vehiculares mediante visión por computadora, optimizando la gestión y seguridad del estacionamiento.
-                </p>
-            </div>
-
-            <div class="col-md-6">
-                <h5>Créditos del Proyecto</h5>
-                <ul class="list-unstyled">
-                    <li><strong>Desarrolladores:</strong>
-                        <ul class="list-inline">
-                            <li class="list-inline-item">Camilo Arenillas,</li>
-                            <li class="list-inline-item">Daniel Arias,</li>
-                            <li class="list-inline-item">Abraham Gómez,</li>
-                            <li class="list-inline-item">Cesar Hernandez.</li>
-                        </ul>
-                    </li>
-                    <li class="mt-2"><strong>Docente:</strong> Rebeca Rosa Viloria Amaya</li>
-                    <li><strong>Asignatura:</strong> Sensores y Actuadores</li>
-                </ul>
-            </div>
-        </div>
-
-        <hr class="footer-hr">
-        <div class="row">
-            <div class="col-12 text-center">
-                <p class="copyright-text mb-0">&copy; 2025 Sistema de Estacionamiento Inteligente. Todos los derechos reservados.</p>
+    <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filterModalLabel"><i class="fas fa-filter me-2"></i> Filtrar Registros</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="filterForm">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Fecha de Inicio:</label>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">Fecha de Fin:</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="applyFilterBtn">Aplicar Filtro</button>
+                </div>
             </div>
         </div>
     </div>
-</footer>
+
+    <footer class="site-footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <h5><i class="fas fa-parking me-2"></i> Estacionamiento Inteligente</h5>
+                    <p class="text-white-50">
+                        Sistema para el reconocimiento automático de placas vehiculares mediante visión por computadora, optimizando la gestión y seguridad del estacionamiento.
+                    </p>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>Créditos del Proyecto</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Desarrolladores:</strong>
+                            <ul class="list-inline">
+                                <li class="list-inline-item">Camilo Arenillas,</li>
+                                <li class="list-inline-item">Daniel Arias,</li>
+                                <li class="list-inline-item">Abraham Gómez,</li>
+                                <li class="list-inline-item">Cesar Hernandez.</li>
+                            </ul>
+                        </li>
+                        <li class="mt-2"><strong>Docente:</strong> Rebeca Rosa Viloria Amaya</li>
+                        <li><strong>Asignatura:</strong> Sensores y Actuadores</li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="footer-hr">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="copyright-text mb-0">&copy; 2025 Sistema de Estacionamiento Inteligente. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="Dashboard_Function.js"></script>
