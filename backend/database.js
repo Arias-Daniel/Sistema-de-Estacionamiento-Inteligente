@@ -1,9 +1,9 @@
 // backend/database.js
 const { createClient } = require('@supabase/supabase-js');
 
-// Tus credenciales de Supabase
-const supabaseUrl = 'https://ftezibicblxmqvpehxaq.supabase.co';
-const supabaseKey = 'sb_publishable_YBXPOJmeZvT78q8W_zUSxw_YBiyGz1y';
+// Tus nuevas credenciales de Supabase
+const supabaseUrl = 'https://sdtwgkzfzquyyhvbkwqg.supabase.co';
+const supabaseKey = 'sb_publishable_S5jNDfWbrePejTCBZaU6DQ_1658J55F';
 
 // Inicializar el cliente
 const supabase = createClient(supabaseUrl, supabaseKey);
