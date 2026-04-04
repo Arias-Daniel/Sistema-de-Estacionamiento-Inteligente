@@ -24,23 +24,48 @@
             background-image: radial-gradient(circle at 15% 50%, rgba(0, 242, 254, 0.05), transparent 25%);
             min-height: 100vh;
             margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* ANIMACIONES DE ENTRADA */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* EFECTOS DE PULSO */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         .futuristic-spot {
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--bg-panel);
             border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            height: 130px;
+            border-radius: 16px;
+            height: 135px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            animation: fadeInScale 0.6s ease-out;
         }
 
+        .spot-occupied-anim { animation: pulse-red 2s infinite; border-color: var(--neon-red) !important; }
+        .spot-free-anim { animation: pulse-green 2s infinite; border-color: var(--neon-green) !important; }
+
         .glass-nav {
-            background: rgba(15, 23, 42, 0.8) !important;
+            background: rgba(15, 23, 42, 0.9) !important;
             backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
         }
 
         .brand-text {
@@ -49,39 +74,28 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 800;
+            letter-spacing: 1px;
         }
 
         .btn-neon {
             background: transparent;
             color: var(--neon-cyan);
-            border: 1px solid var(--neon-cyan);
-            border-radius: 30px;
-            padding: 0.4rem 1.2rem;
-            text-decoration: none;
-            font-weight: 600;
+            border: 2px solid var(--neon-cyan);
+            border-radius: 50px;
+            padding: 0.6rem 2rem;
+            font-weight: bold;
+            transition: 0.3s;
+            text-transform: uppercase;
         }
 
         .btn-neon:hover {
             background: var(--neon-cyan);
             color: var(--bg-dark);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 25px var(--neon-cyan);
+            transform: translateY(-2px);
         }
 
-        .public-header { padding: 100px 0 20px 0; }
-
-        .nav-tabs .nav-link { color: #94a3b8; border: none; padding: 1rem 2rem; }
-        .nav-tabs .nav-link.active {
-            color: var(--neon-cyan);
-            background: rgba(0, 242, 254, 0.05);
-            border-bottom: 2px solid var(--neon-cyan);
-        }
-
-        .glass-card {
-            background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-        }
+        .public-header { padding: 110px 0 20px 0; }
 
         .glow-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
         .glow-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
@@ -94,7 +108,7 @@
                 <i class="fas fa-satellite-dish me-2 fs-4" style="color: var(--neon-cyan);"></i>
                 <span class="brand-text">SMART PARKING V2</span>
             </a>
-            <a href="login.html" class="btn btn-neon"><i class="fas fa-fingerprint me-2"></i>Personal</a>
+            <a href="login.html" class="btn btn-neon btn-sm">Personal</a>
         </div>
     </nav>
 
@@ -103,7 +117,7 @@
             <h1 class="fw-bold text-white mb-3">Estado en Tiempo Real</h1>
             
             <div id="smartStatusContainer" class="mb-4">
-                <span class="badge rounded-pill p-3 fs-6 shadow-sm" id="smartBadge" style="border: 1px solid var(--neon-cyan); color: var(--neon-cyan);">
+                <span class="badge rounded-pill p-3 fs-6 shadow-sm" id="smartBadge" style="border: 2px solid var(--neon-cyan); color: var(--neon-cyan);">
                     <i class="fas fa-sync-alt fa-spin me-2"></i>Sincronizando...
                 </span>
             </div>
@@ -111,15 +125,15 @@
             <div class="row justify-content-center mb-4">
                 <div class="col-auto">
                     <div class="p-3 rounded-4 shadow-lg d-flex align-items-center" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 254, 0.2); backdrop-filter: blur(10px);">
-                        <div class="px-3 border-end border-secondary text-center">
+                        <div class="px-4 border-end border-secondary text-center">
                             <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Base</small>
                             <span class="text-white fs-5 fw-bold" id="baseFeeDisplay">$ --</span>
                         </div>
-                        <div class="px-3 border-end border-secondary text-center">
+                        <div class="px-4 border-end border-secondary text-center">
                             <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Extra</small>
                             <span class="text-white fs-5 fw-bold" id="extraFeeDisplay">$ --</span>
                         </div>
-                        <div class="px-3 text-center">
+                        <div class="px-4 text-center">
                             <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Max Día</small>
                             <span class="glow-text-green fs-5 fw-bold" id="maxFeeDisplay">$ --</span>
                         </div>
@@ -142,7 +156,7 @@
                         <script>
                             for(let i=1; i<=8; i++) {
                                 document.write(`
-                                    <div class="col-md-3 col-sm-6">
+                                    <div class="col-md-3 col-6">
                                         <div class="futuristic-spot" data-spot="${i}">
                                             <div class="text-center w-100">
                                                 <i class="fas fa-car fa-2x mb-2 spot-icon"></i>
@@ -163,27 +177,26 @@
         </div>
 
         <div class="text-center mt-5 mb-5">
-            <button class="btn btn-neon px-5 py-3 shadow-lg" data-bs-toggle="modal" data-bs-target="#ticketModal">
-                <i class="fas fa-qrcode me-2"></i> GENERAR TICKET DIGITAL
+            <button class="btn btn-neon shadow-lg" data-bs-toggle="modal" data-bs-target="#ticketModal">
+                <i class="fas fa-qrcode me-2"></i> Generar Ticket Digital
             </button>
         </div>
     </div>
 
     <div class="modal fade" id="ticketModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content glass-card" style="background: #0f172a; border: 1px solid var(--neon-cyan);">
-                <div class="modal-header border-0"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body text-center p-4">
+            <div class="modal-content glass-card p-4" style="background: #020617; border: 2px solid var(--neon-cyan); border-radius: 25px;">
+                <div class="modal-body text-center">
                     <div id="inputSection">
-                        <h5 class="text-white mb-3">Ingrese su Placa</h5>
-                        <input type="text" id="plateInput" class="form-control form-control-lg bg-dark text-white border-secondary text-center mb-3" placeholder="ABC-123" style="text-transform: uppercase;">
-                        <button class="btn btn-neon w-100" onclick="generateQR()">GENERAR</button>
+                        <h4 class="text-white mb-4">Verificación de Vehículo</h4>
+                        <input type="text" id="plateInput" class="form-control form-control-lg bg-dark text-white text-center border-info mb-4" placeholder="ABC-123" style="text-transform: uppercase;">
+                        <button class="btn btn-neon w-100" onclick="generateQR()">VERIFICAR Y CREAR</button>
                     </div>
                     <div id="qrSection" class="d-none">
-                        <div id="qrcode" class="bg-white p-3 d-inline-block rounded-3 mb-3"></div>
-                        <h4 class="text-white fw-bold mb-1" id="displayPlate">---</h4>
-                        <p class="text-secondary small" id="displayTime"></p>
-                        <button class="btn btn-outline-secondary btn-sm mt-2" onclick="resetTicket()">Nuevo</button>
+                        <div id="qrcode" class="bg-white p-3 d-inline-block rounded-4 mb-3 shadow-lg"></div>
+                        <h2 id="displayPlate" class="text-info fw-bold mb-1"></h2>
+                        <p id="displayTime" class="text-secondary small"></p>
+                        <button class="btn btn-outline-secondary btn-sm mt-3" onclick="location.reload()">Nuevo</button>
                     </div>
                 </div>
             </div>
@@ -199,17 +212,16 @@
                 document.getElementById('baseFeeDisplay').textContent = `$ ${s.baseFee.toLocaleString()}`;
                 document.getElementById('extraFeeDisplay').textContent = `$ ${s.additionalHourFee.toLocaleString()}`;
                 document.getElementById('maxFeeDisplay').textContent = `$ ${s.maxDailyFee.toLocaleString()}`;
-            } catch (e) { console.error("Error tarifas:", e); }
+            } catch (e) {}
         }
 
         async function updateStatus() {
             try {
                 const res = await fetch('/api/parking-status');
                 const d = await res.json();
-                let occupied = 0;
-
                 if (!d.data) return;
 
+                let occupied = 0;
                 d.data.forEach(spot => {
                     const el = document.querySelector(`.futuristic-spot[data-spot="${spot.id}"]`);
                     if (el) {
@@ -218,12 +230,12 @@
                         
                         if (spot.is_occupied) {
                             occupied++;
-                            el.style.borderColor = '#ef4444';
+                            el.className = 'futuristic-spot spot-occupied-anim';
                             badge.textContent = 'OCUPADO';
                             badge.className = 'badge badge-status bg-danger';
                             icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
                         } else {
-                            el.style.borderColor = '#10b981';
+                            el.className = 'futuristic-spot spot-free-anim';
                             badge.textContent = 'LIBRE';
                             badge.className = 'badge badge-status bg-success';
                             icon.className = 'fas fa-car fa-2x mb-2 glow-text-green';
@@ -233,44 +245,45 @@
 
                 const avail = d.data.length - occupied;
                 const sb = document.getElementById('smartBadge');
-                if (avail === 0) {
-                    sb.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> NIVEL 1 LLENO`;
-                    sb.style.color = '#ef4444';
-                    sb.style.borderColor = '#ef4444';
-                } else {
-                    sb.innerHTML = `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
-                    sb.style.color = '#00f2fe';
-                    sb.style.borderColor = '#00f2fe';
-                }
-            } catch (e) { console.error("Error estado:", e); }
+                sb.innerHTML = avail === 0 ? `<i class="fas fa-ban me-2"></i> LLENO` : `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
+                sb.style.color = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
+                sb.style.borderColor = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
+            } catch (e) { console.error(e); }
         }
 
-        function generateQR() {
+        async function generateQR() {
             const p = document.getElementById('plateInput').value.trim().toUpperCase();
             if(!p) return alert("Ingrese placa");
-            document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), { 
-                text: JSON.stringify({ placa: p, fecha: new Date().toISOString() }), 
-                width: 180, height: 180 
-            });
-            document.getElementById('displayPlate').textContent = p;
-            document.getElementById('displayTime').textContent = "Entrada: " + new Date().toLocaleTimeString();
-            document.getElementById('inputSection').classList.add('d-none');
-            document.getElementById('qrSection').classList.remove('d-none');
+
+            const btn = document.querySelector('#inputSection button');
+            btn.innerText = "BUSCANDO..."; btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/parking-status');
+                const dataObj = await res.json();
+                
+                // VALIDACIÓN: La placa debe estar físicamente en un espacio ocupado
+                const activeSpot = dataObj.data.find(s => s.is_occupied && s.license_plate === p);
+
+                if (activeSpot) {
+                    document.getElementById('qrcode').innerHTML = "";
+                    new QRCode(document.getElementById("qrcode"), { 
+                        text: JSON.stringify({ placa: p, entrada: new Date().toISOString() }), 
+                        width: 200, height: 200 
+                    });
+                    document.getElementById('displayPlate').innerText = p;
+                    document.getElementById('displayTime').innerText = "Vínculo con Sensor P1-" + activeSpot.id + " Establecido";
+                    document.getElementById('inputSection').classList.add('d-none');
+                    document.getElementById('qrSection').classList.remove('d-none');
+                } else {
+                    alert("ERROR: La placa " + p + " no ha sido detectada por las cámaras de entrada.");
+                }
+            } catch (e) { alert("Error de conexión"); }
+            finally { btn.innerText = "VERIFICAR Y CREAR"; btn.disabled = false; }
         }
 
-        function resetTicket() {
-            document.getElementById('plateInput').value = "";
-            document.getElementById('inputSection').classList.remove('d-none');
-            document.getElementById('qrSection').classList.add('d-none');
-        }
-
-        // Ejecución inmediata
-        updateFees(); 
-        updateStatus();
-
-        // Ciclos de tiempo real
-        setInterval(updateStatus, 2000); 
+        updateFees(); updateStatus();
+        setInterval(updateStatus, 2000); // 2 segundos para tiempo real total
         setInterval(updateFees, 30000);
     </script>
 </body>
