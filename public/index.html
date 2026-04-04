@@ -34,7 +34,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: border-color 0.3s ease; /* Solo transición de color simple */
+            transition: all 0.3s ease;
         }
 
         .glass-nav {
@@ -138,7 +138,8 @@
         <div class="glass-card p-4">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="piso1">
-                    <div class="row g-4" id="parkingMapContainer"></div>
+                    <div class="row g-4" id="parkingMapContainer">
+                        </div>
                 </div>
                 <div class="tab-pane fade text-center py-5" id="piso2">
                     <h3 class="text-secondary">Nivel 2 Próximamente</h3>
@@ -177,6 +178,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const container = document.getElementById('parkingMapContainer');
+        // 1. Generar los cuadritos con la clase 'badge-status' para que el JS los encuentre
         for(let i=1; i<=8; i++) {
             container.innerHTML += `
                 <div class="col-md-3 col-sm-6">
@@ -184,7 +186,7 @@
                         <div class="text-center w-100">
                             <i class="fas fa-car fa-2x mb-2 spot-icon"></i>
                             <div class="fw-bold fs-5 text-white">P1 - ${i}</div>
-                            <span class="badge">--</span>
+                            <span class="badge badge-status">--</span>
                         </div>
                     </div>
                 </div>`;
@@ -197,7 +199,7 @@
                 document.getElementById('baseFeeDisplay').textContent = `$ ${s.baseFee.toLocaleString()}`;
                 document.getElementById('extraFeeDisplay').textContent = `$ ${s.additionalHourFee.toLocaleString()}`;
                 document.getElementById('maxFeeDisplay').textContent = `$ ${s.maxDailyFee.toLocaleString()}`;
-            } catch (e) {}
+            } catch (e) { console.error("Error tarifas:", e); }
         }
 
         async function updateStatus() {
@@ -206,37 +208,43 @@
                 const d = await res.json();
                 let occupied = 0;
 
+                if (!d.data) return;
+
                 d.data.forEach(spot => {
+                    // Buscamos el cuadro por ID
                     const el = document.querySelector(`.futuristic-spot[data-spot="${spot.id}"]`);
                     if (el) {
-                        const badge = el.querySelector('.badge');
+                        const badge = el.querySelector('.badge-status'); // CORRECCIÓN: Usar la clase correcta
                         const icon = el.querySelector('.spot-icon');
                         
                         if (spot.is_occupied) {
                             occupied++;
-                            el.style.borderColor = 'var(--neon-red)';
+                            el.style.borderColor = '#ef4444'; // Rojo neón
                             badge.textContent = 'OCUPADO';
-                            badge.className = 'badge bg-danger';
+                            badge.className = 'badge badge-status bg-danger';
                             icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
                         } else {
-                            el.style.borderColor = 'var(--neon-green)';
+                            el.style.borderColor = '#10b981'; // Verde neón
                             badge.textContent = 'LIBRE';
-                            badge.className = 'badge bg-success';
+                            badge.className = 'badge badge-status bg-success';
                             icon.className = 'fas fa-car fa-2x mb-2 glow-text-green';
                         }
                     }
                 });
 
+                // Actualizar Smart Badge superior
                 const avail = d.data.length - occupied;
                 const sb = document.getElementById('smartBadge');
                 if (avail === 0) {
                     sb.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> NIVEL 1 LLENO`;
-                    sb.style.color = 'var(--neon-red)';
+                    sb.style.color = '#ef4444';
+                    sb.style.borderColor = '#ef4444';
                 } else {
                     sb.innerHTML = `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
-                    sb.style.color = 'var(--neon-cyan)';
+                    sb.style.color = '#00f2fe';
+                    sb.style.borderColor = '#00f2fe';
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Error estado:", e); }
         }
 
         function generateQR() {
@@ -259,10 +267,10 @@
             document.getElementById('qrSection').classList.add('d-none');
         }
 
-        // Ejecución
+        // Ejecución inicial y ciclos
         updateFees(); 
         updateStatus();
-        setInterval(updateStatus, 3000); // 3 segundos es seguro para sincronización
+        setInterval(updateStatus, 2500); // 2.5 segundos para respuesta rápida
         setInterval(updateFees, 30000);
     </script>
 </body>
