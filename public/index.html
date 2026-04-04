@@ -39,6 +39,17 @@
             perspective: 1000px;
             z-index: -1; /* Al fondo de todo */
             pointer-events: none; /* No estorba al hacer clic */
+            /* ESTO ES LO NUEVO: Hace que se mueva por toda la pantalla */
+            animation: floatAround 35s infinite ease-in-out alternate; 
+        }
+
+        /* TRAYECTORIA DEL CUBO DE ESQUINA A ESQUINA */
+        @keyframes floatAround {
+            0% { transform: translate(-35vw, -35vh); }
+            25% { transform: translate(35vw, -15vh); }
+            50% { transform: translate(-25vw, 35vh); }
+            75% { transform: translate(35vw, 35vh); }
+            100% { transform: translate(-35vw, -35vh); }
         }
 
         .bg-cube {
@@ -181,7 +192,7 @@
 
     <div class="public-header text-center">
         <div class="container">
-            <h1 class="fw-bold text-white mb-3">Estado en Tiempo Real</h1>
+            <h1 class="fw-bold text-white mb-3">ESTADO EN TIEMPO REAL</h1>
             
             <div id="smartStatusContainer" class="mb-4">
                 <span class="badge rounded-pill p-3 fs-6 shadow-sm" id="smartBadge" style="border: 2px solid var(--neon-cyan); color: var(--neon-cyan);">
