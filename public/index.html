@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
-        /* === TEMA FUTURISTA / SMART CITY === */
         :root {
             --bg-dark: #0f172a;
             --bg-panel: rgba(30, 41, 59, 0.7);
@@ -27,7 +26,6 @@
             margin: 0;
         }
 
-        /* 4. ANIMACIONES DE TRANSICIÓN */
         .futuristic-spot {
             background: rgba(15, 23, 42, 0.6);
             border: 2px solid rgba(255, 255, 255, 0.1);
@@ -36,13 +34,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Transición suave para todos los cambios de estilo */
+            transition: all 0.5s ease-in-out; 
             position: relative;
             overflow: hidden;
         }
 
         @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
             70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
@@ -98,8 +97,8 @@
             border-radius: 20px;
         }
 
-        .glow-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); transition: 0.5s; }
-        .glow-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); transition: 0.5s; }
+        .glow-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .glow-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
     </style>
 </head>
 <body>
@@ -192,7 +191,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const container = document.getElementById('parkingMapContainer');
-        // Generación dinámica de espacios
         for(let i=1; i<=8; i++) {
             container.innerHTML += `
                 <div class="col-md-3 col-sm-6">
@@ -206,7 +204,6 @@
                 </div>`;
         }
 
-        // Función para actualizar tarifas desde el servidor
         async function updateFees() {
             try {
                 const res = await fetch('/api/settings');
@@ -214,10 +211,12 @@
                 document.getElementById('baseFeeDisplay').textContent = `$ ${s.baseFee.toLocaleString()}`;
                 document.getElementById('extraFeeDisplay').textContent = `$ ${s.additionalHourFee.toLocaleString()}`;
                 document.getElementById('maxFeeDisplay').textContent = `$ ${s.maxDailyFee.toLocaleString()}`;
-            } catch (e) { console.error("Error tarifas:", e); }
+            } catch (e) {}
         }
 
-        // Función para actualizar estado de ocupación
+        // VARIABLE PARA GUARDAR EL ESTADO ANTERIOR (Evita refrescos innecesarios)
+        let previousState = {};
+
         async function updateStatus() {
             try {
                 const res = await fetch('/api/parking-status');
@@ -230,25 +229,35 @@
                         const badge = el.querySelector('.badge');
                         const icon = el.querySelector('.spot-icon');
                         
+                        // Detectamos si el estado cambió desde la última vez
+                        const hasChanged = previousState[spot.id] !== spot.is_occupied;
+
                         if (spot.is_occupied) {
                             occupied++;
-                            el.classList.add('spot-occupied-anim');
+                            if (hasChanged) {
+                                el.classList.add('spot-occupied-anim');
+                                // Efecto visual de entrada
+                                el.style.transform = "scale(1.02)";
+                                setTimeout(() => { el.style.transform = "scale(1)"; }, 400);
+                            }
                             badge.textContent = 'OCUPADO';
                             badge.className = 'badge bg-danger';
                             icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
                         } else {
-                            el.classList.remove('spot-occupied-anim');
+                            if (hasChanged) {
+                                el.classList.remove('spot-occupied-anim');
+                            }
                             badge.textContent = 'LIBRE';
                             badge.className = 'badge bg-success';
                             icon.className = 'fas fa-car fa-2x mb-2 glow-text-green';
                         }
+                        // Actualizamos el estado previo
+                        previousState[spot.id] = spot.is_occupied;
                     }
                 });
 
                 const avail = d.data.length - occupied;
                 const sb = document.getElementById('smartBadge');
-                
-                // Mensajes inteligentes de disponibilidad
                 if (avail === 0) {
                     sb.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> NIVEL 1 LLENO`;
                     sb.style.color = 'var(--neon-red)';
@@ -258,21 +267,17 @@
                     sb.style.color = 'var(--neon-cyan)';
                     sb.style.borderColor = 'var(--neon-cyan)';
                 }
-            } catch (e) { console.error("Error estado:", e); }
+            } catch (e) { console.error(e); }
         }
 
-        // Lógica de Ticket Digital QR
         function generateQR() {
             const p = document.getElementById('plateInput').value.trim().toUpperCase();
             if(!p) return alert("Ingrese placa");
-            
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById("qrcode"), { 
-                text: JSON.stringify({ placa: p, fecha: new Date().toISOString() }), 
-                width: 180, 
-                height: 180 
+                text: JSON.stringify({ p: p, t: new Date().toISOString() }), 
+                width: 180, height: 180 
             });
-            
             document.getElementById('displayPlate').textContent = p;
             document.getElementById('displayTime').textContent = "Entrada: " + new Date().toLocaleTimeString();
             document.getElementById('inputSection').classList.add('d-none');
@@ -285,13 +290,12 @@
             document.getElementById('qrSection').classList.add('d-none');
         }
 
-        // EJECUCIÓN INICIAL Y CICLOS
+        // INICIALIZACIÓN
         updateFees(); 
         updateStatus();
 
-        // Ciclo rápido de 2 segundos para que la ocupación se vea al instante
+        // Ciclo rápido de 2 segundos. La "Memoria de Estado" hará que sea fluido.
         setInterval(updateStatus, 2000); 
-        // Ciclo lento de 30 segundos para tarifas
         setInterval(updateFees, 30000);
     </script>
 </body>
