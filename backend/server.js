@@ -11,25 +11,32 @@ app.use(express.json());
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// --- LÓGICA DE TARIFAS ---
+// --- CONFIGURACIÓN DINÁMICA DE TARIFAS (PASO 1) ---
+let settings = {
+    baseFee: 2000,
+    additionalHourFee: 1500,
+    maxDailyFee: 15000,
+    parkingName: "Estacionamiento Inteligente"
+};
+
+// --- LÓGICA DE TARIFAS ACTUALIZADA ---
 function calculateFee(entryTime, exitTime) {
     const entry = new Date(entryTime);
     const exit = new Date(exitTime);
     const durationMinutes = Math.ceil((exit - entry) / (1000 * 60));
 
     if (durationMinutes <= 60) {
-        return { fee: 2000, duration: durationMinutes };
+        return { fee: settings.baseFee, duration: durationMinutes };
     }
 
     const hours = Math.ceil(durationMinutes / 60);
-    let fee = 2000; // Tarifa primera hora
-    fee += (hours - 1) * 1500; // Tarifa horas adicionales
+    // Calculamos: Tarifa base + (horas restantes * precio hora adicional)
+    let fee = settings.baseFee + (hours - 1) * settings.additionalHourFee;
 
-    const maxFee = 15000;
-    return { fee: Math.min(fee, maxFee), duration: durationMinutes };
+    return { fee: Math.min(fee, settings.maxDailyFee), duration: durationMinutes };
 }
 
-// --- ENDPOINTS DE LA API (Adaptados a Supabase) ---
+// --- ENDPOINTS DE LA API ---
 
 // 1. Obtener el estado de todos los espacios
 app.get("/api/parking-status", async (req, res) => {
@@ -57,7 +64,6 @@ app.get("/api/records", async (req, res) => {
             .order('entry_time', { ascending: false });
 
         if (startDate && endDate) {
-            // Ajustar endDate para incluir todo el día
             const endOfDay = new Date(endDate);
             endOfDay.setDate(endOfDay.getDate() + 1);
             
@@ -81,7 +87,6 @@ app.post("/api/entry", async (req, res) => {
     const entry_time = new Date().toISOString();
 
     try {
-        // 1. Actualizar el espacio
         const { error: updateError } = await supabase
             .from('parking_spots')
             .update({ 
@@ -93,7 +98,6 @@ app.post("/api/entry", async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // 2. Insertar en el historial
         const { error: insertError } = await supabase
             .from('parking_records')
             .insert([{ 
@@ -106,7 +110,6 @@ app.post("/api/entry", async (req, res) => {
 
         res.json({ message: "Entrada registrada con éxito", spot_id, license_plate });
     } catch (err) {
-        console.error(err);
         res.status(400).json({ "error": err.message });
     }
 });
@@ -117,7 +120,6 @@ app.post("/api/exit", async (req, res) => {
     const exit_time = new Date().toISOString();
 
     try {
-        // 1. Obtener datos del vehículo actual
         const { data: spots, error: fetchError } = await supabase
             .from('parking_spots')
             .select('license_plate, entry_time')
@@ -125,12 +127,11 @@ app.post("/api/exit", async (req, res) => {
             .single();
 
         if (fetchError || !spots || !spots.entry_time) {
-            return res.status(400).json({ "error": "No se pudo encontrar el vehículo en ese espacio." });
+            return res.status(400).json({ "error": "No se pudo encontrar el vehículo." });
         }
 
         const { fee, duration } = calculateFee(spots.entry_time, exit_time);
 
-        // 2. Liberar el espacio
         const { error: updateSpotError } = await supabase
             .from('parking_spots')
             .update({ 
@@ -142,8 +143,6 @@ app.post("/api/exit", async (req, res) => {
 
         if (updateSpotError) throw updateSpotError;
 
-        // 3. Actualizar el registro en el historial
-        // Nota: Buscamos por placa y status 'En estacionamiento'
         const { error: updateRecordError } = await supabase
             .from('parking_records')
             .update({ 
@@ -166,20 +165,17 @@ app.post("/api/exit", async (req, res) => {
 // 5. Endpoint para las estadísticas rápidas
 app.get("/api/stats", async (req, res) => {
     try {
-        // Conteo de ocupados
         const { count: occupiedCount, error: errOcc } = await supabase
             .from('parking_spots')
             .select('*', { count: 'exact', head: true })
             .eq('is_occupied', true);
 
-        // Entradas de hoy
         const today = new Date().toISOString().split('T')[0];
         const { count: todayEntries, error: errEnt } = await supabase
             .from('parking_records')
             .select('*', { count: 'exact', head: true })
             .gte('entry_time', today);
 
-        // Ingresos de hoy (Supabase JS no tiene SUM directo fácil sin RPC, lo calculamos aquí)
         const { data: revenueData, error: errRev } = await supabase
             .from('parking_records')
             .select('fee')
@@ -202,12 +198,10 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// 6. Endpoint para datos de la Gráfica (Ocupación por hora de hoy)
+// 6. Endpoint para datos de la Gráfica
 app.get("/api/chart-data", async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
-        
-        // Traer todos los registros del día de hoy
         const { data: records, error } = await supabase
             .from('parking_records')
             .select('entry_time, exit_time')
@@ -215,25 +209,21 @@ app.get("/api/chart-data", async (req, res) => {
 
         if (error) throw error;
 
-        // Ampliamos el horario para pruebas en la noche (De 8 AM a 9 PM)
         const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
         const labels = hours.map(h => `${h}:00`);
         
         const data = hours.map(hour => {
             let occupiedAtHour = 0;
-            
             records.forEach(record => {
-                // Ajustar a zona horaria de Colombia
                 const entryStr = new Date(record.entry_time).toLocaleString("en-US", {timeZone: "America/Bogota"});
                 const entryHour = new Date(entryStr).getHours();
                 
-                let exitHour = 24; // Si no ha salido, sigue ocupando espacio
+                let exitHour = 24; 
                 if (record.exit_time) {
                     const exitStr = new Date(record.exit_time).toLocaleString("en-US", {timeZone: "America/Bogota"});
                     exitHour = new Date(exitStr).getHours();
                 }
 
-                // CORRECCIÓN: Si el carro estuvo presente durante esa hora (incluso si entró y salió en la misma hora)
                 if (entryHour <= hour && exitHour >= hour) {
                     occupiedAtHour++;
                 }
@@ -247,28 +237,21 @@ app.get("/api/chart-data", async (req, res) => {
     }
 });
 
-// 7. EXPORTAR registros a EXCEL (con filtros)
+// 7. EXPORTAR registros a EXCEL
 app.get("/api/records/export", async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
-        let query = supabase
-            .from('parking_records')
-            .select('*')
-            .order('entry_time', { ascending: false });
+        let query = supabase.from('parking_records').select('*').order('entry_time', { ascending: false });
 
         if (startDate && endDate) {
             const endOfDay = new Date(endDate);
             endOfDay.setDate(endOfDay.getDate() + 1);
-            query = query
-                .gte('entry_time', startDate)
-                .lt('entry_time', endOfDay.toISOString().split('T')[0]);
+            query = query.gte('entry_time', startDate).lt('entry_time', endOfDay.toISOString().split('T')[0]);
         }
 
         const { data: records, error } = await query;
         if (error) throw error;
 
-        // --- Lógica para crear el archivo Excel ---
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Registros');
 
@@ -283,11 +266,7 @@ app.get("/api/records/export", async (req, res) => {
 
         worksheet.getRow(1).eachCell((cell) => {
             cell.font = { bold: true };
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFE0E0E0' }
-            };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
         });
 
         const formattedRecords = records.map(r => ({
@@ -297,29 +276,36 @@ app.get("/api/records/export", async (req, res) => {
         }));
 
         worksheet.addRows(formattedRecords);
-
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=registros-estacionamiento-${new Date().toISOString().slice(0,10)}.xlsx`);
-
+        res.setHeader('Content-Disposition', `attachment; filename=registros-${new Date().toISOString().slice(0,10)}.xlsx`);
         await workbook.xlsx.write(res);
         res.end();
-
     } catch (err) {
-        console.error("Error al generar el archivo Excel:", err);
         res.status(500).send("Error al generar el archivo Excel");
     }
 });
 
-// 8. Endpoint de Login (Seguridad básica para el Dashboard)
+// 8. Endpoint de Login
 app.post("/api/login", (req, res) => {
     const { username, password } = req.body;
-    
-    // Credenciales quemadas para la sustentación de TPI II
     if (username === "admin" && password === "tpi2026") {
         res.json({ success: true, message: "Acceso autorizado" });
     } else {
         res.status(401).json({ success: false, message: "Usuario o contraseña incorrectos" });
     }
+});
+
+// --- NUEVOS ENDPOINTS DE CONFIGURACIÓN (PASO 1) ---
+
+// 9. Obtener configuraciones actuales
+app.get("/api/settings", (req, res) => {
+    res.json(settings);
+});
+
+// 10. Actualizar configuraciones
+app.post("/api/settings", (req, res) => {
+    settings = { ...settings, ...req.body };
+    res.json({ message: "Configuración actualizada con éxito", settings });
 });
 
 app.use(function (req, res) {

@@ -118,7 +118,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
                                     <div class="col-md-3">
                                         <div class="parking-spot available" data-spot="5">
                                             <div class="text-center">
@@ -186,26 +185,6 @@
                     
                     <div class="card mt-4">
                         <div class="card-header">
-                            <i class="fas fa-dollar-sign me-2"></i> Información de Tarifas
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <h6>Tarifa Base</h6>
-                                <p>$2.000 por la primera hora</p>
-                            </div>
-                            <div class="mb-3">
-                                <h6>Tarifa por Hora Adicional</h6>
-                                <p>$1.500 por cada hora adicional</p>
-                            </div>
-                            <div>
-                                <h6>Tarifa Máxima Diaria</h6>
-                                <p>$15.000 por día</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card mt-4">
-                        <div class="card-header">
                             <i class="fas fa-car me-2"></i> Detalles del Vehículo Seleccionado
                         </div>
                         <div class="card-body">
@@ -247,8 +226,7 @@
                                             <th>Estado</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        </tbody>
+                                    <tbody></tbody>
                                 </table>
                             </div>
                         </div>
@@ -259,38 +237,103 @@
 
         <div id="vista-configuracion" class="d-none">
             <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <i class="fas fa-cog me-2"></i> Configuración del Sistema
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-primary text-white">
+                            <i class="fas fa-money-bill-wave me-2"></i> Gestión de Tarifas
                         </div>
-                        <div class="card-body text-center p-5">
-                            <i class="fas fa-tools fa-4x text-muted mb-3"></i>
-                            <h5 class="card-title">Panel en construcción</h5>
-                            <p class="card-text text-muted">Aquí podrás configurar las tarifas, gestionar usuarios y ajustar los parámetros del sistema de reconocimiento de placas en futuras versiones.</p>
+                        <div class="card-body">
+                            <form id="feesForm">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Tarifa Base (1ra Hora)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" id="inputBaseFee" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Hora Adicional</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" id="inputExtraFee" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Máximo Diario</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" id="inputMaxFee" class="form-control" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-save me-2"></i> Guardar Cambios
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fas fa-calculator me-2"></i> Simulador de Cobro Rápido
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Calcula cuánto debería pagar un cliente según el tiempo de estancia.</p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Minutos de Estancia</label>
+                                <input type="number" id="simMinutes" class="form-control" placeholder="Ej: 120">
+                            </div>
+                            <div class="alert alert-info text-center">
+                                <h4 class="mb-0" id="simResult">$ 0.00</h4>
+                                <small>Total Estimado</small>
+                            </div>
+                            <button class="btn btn-outline-primary w-100" onclick="simularCobro()">
+                                Calcular
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <i class="fas fa-cogs me-2"></i> Parámetros del Sistema
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <label class="form-label small fw-bold">Nombre del Establecimiento</label>
+                                    <input type="text" id="inputParkingName" class="form-control mb-3">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-primary w-100 mb-3" onclick="actualizarConfigGral()">
+                                        Actualizar Nombre
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal fade" id="filterModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="filterModalLabel"><i class="fas fa-filter me-2"></i> Filtrar Registros</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title"><i class="fas fa-filter me-2"></i> Filtrar Registros</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="filterForm">
                         <div class="mb-3">
-                            <label for="startDate" class="form-label">Fecha de Inicio:</label>
+                            <label class="form-label">Fecha de Inicio:</label>
                             <input type="date" class="form-control" id="startDate">
                         </div>
                         <div class="mb-3">
-                            <label for="endDate" class="form-label">Fecha de Fin:</label>
+                            <label class="form-label">Fecha de Fin:</label>
                             <input type="date" class="form-control" id="endDate">
                         </div>
                     </form>
@@ -306,35 +349,21 @@
     <footer class="site-footer mt-5">
         <div class="container">
             <div class="row">
-                <div class="col-md-6 mb-4 mb-md-0">
+                <div class="col-md-6 mb-4">
                     <h5><i class="fas fa-parking me-2"></i> Estacionamiento Inteligente</h5>
-                    <p class="text-white-50">
-                        Sistema para el reconocimiento automático de placas vehiculares mediante visión por computadora, optimizando la gestión y seguridad del estacionamiento.
-                    </p>
+                    <p class="text-white-50">Reconocimiento automático de placas mediante visión artificial para una gestión mecatrónica eficiente.</p>
                 </div>
-
                 <div class="col-md-6">
                     <h5>Créditos del Proyecto</h5>
                     <ul class="list-unstyled">
-                        <li><strong>Desarrolladores:</strong>
-                            <ul class="list-inline">
-                                <li class="list-inline-item">Camilo Arenillas,</li>
-                                <li class="list-inline-item">Daniel Arias,</li>
-                                <li class="list-inline-item">Cesar Hernandez.</li>
-                            </ul>
-                        </li>
+                        <li><strong>Desarrolladores:</strong> C. Arenillas, D. Arias, C. Hernandez.</li>
                         <li class="mt-2"><strong>Docente:</strong> Sebastian Robledo Giraldo</li>
                         <li><strong>Asignatura:</strong> TPI II</li>
                     </ul>
                 </div>
             </div>
-
             <hr class="footer-hr">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <p class="copyright-text mb-0">&copy; 2026 Sistema de Estacionamiento Inteligente. Todos los derechos reservados.</p>
-                </div>
-            </div>
+            <p class="text-center copyright-text">&copy; 2026 Smart Parking System. Todos los derechos reservados.</p>
         </div>
     </footer>
 

@@ -5,7 +5,7 @@ if (localStorage.getItem('auth_token') !== 'true') {
     window.location.href = '/login.html';
 }
 
-// Función para cerrar sesión (si lo necesitas en el futuro)
+// Función para cerrar sesión
 function logout() {
     localStorage.removeItem('auth_token');
     window.location.href = '/login.html';
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function updateDashboard() {
     await updateParkingSpots();
     await updateStats();
-    await updateRecordsTable(currentStartDate, currentEndDate); // Mantiene los filtros activos si hay auto-refresh
+    await updateRecordsTable(currentStartDate, currentEndDate); // Mantiene los filtros activos
     await updateChartData(); // Llama a la gráfica en cada actualización
     await updateRecentActivity(); // Llama a la actividad reciente en cada actualización
 }
@@ -73,16 +73,15 @@ async function updateStats() {
         document.getElementById('availableSpots').textContent = stats.available_spots;
         document.getElementById('occupiedSpots').textContent = stats.occupied_spots;
         document.getElementById('todayEntries').textContent = stats.today_entries;
-        document.getElementById('todayRevenue').textContent = `$${stats.today_revenue.toFixed(2)}`;
+        document.getElementById('todayRevenue').textContent = `$${stats.today_revenue.toLocaleString()}`;
     } catch (error) {
         console.error('Error al actualizar las estadísticas:', error);
     }
 }
 
-// 3. Actualizar la tabla de registros (con filtros opcionales)
+// 3. Actualizar la tabla de registros
 async function updateRecordsTable(startDate, endDate) {
     try {
-        // Construimos la URL con los parámetros de filtro si existen
         let url = `${API_URL}/records`;
         if (startDate && endDate) {
             url += `?startDate=${startDate}&endDate=${endDate}`;
@@ -92,10 +91,10 @@ async function updateRecordsTable(startDate, endDate) {
         const { data } = await response.json();
         
         const tbody = document.querySelector('.table tbody');
-        tbody.innerHTML = ''; // Limpiar la tabla
+        tbody.innerHTML = ''; 
 
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros para el filtro aplicado.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros.</td></tr>';
             return;
         }
 
@@ -103,7 +102,7 @@ async function updateRecordsTable(startDate, endDate) {
              const entryTime = new Date(record.entry_time).toLocaleTimeString();
              const exitTime = record.exit_time ? new Date(record.exit_time).toLocaleTimeString() : '-';
              const duration = record.duration_minutes ? `${record.duration_minutes} min` : 'En curso';
-             const fee = record.fee ? `$${record.fee.toFixed(2)}` : '-';
+             const fee = record.fee ? `$${record.fee.toLocaleString()}` : '-';
              const statusBadge = record.status === 'En estacionamiento' 
              ? '<span class="badge bg-success">En estacionamiento</span>' 
              : '<span class="badge bg-danger">Completado</span>';
@@ -128,21 +127,19 @@ async function updateRecordsTable(startDate, endDate) {
 // 4. Actualizar la Actividad Reciente
 async function updateRecentActivity() {
     try {
-        // Pedimos los registros al servidor
         const response = await fetch(`${API_URL}/records`);
         const { data } = await response.json();
         
         const ul = document.querySelector('.recent-activity ul');
         if (!ul) return;
 
-        ul.innerHTML = ''; // Limpiamos el mensaje de "Esperando..."
+        ul.innerHTML = ''; 
 
         if (data.length === 0) {
             ul.innerHTML = '<li class="list-group-item text-center text-muted">Aún no hay registros.</li>';
             return;
         }
 
-        // Tomamos solo los 5 registros más recientes
         const recentRecords = data.slice(0, 5);
 
         recentRecords.forEach(record => {
@@ -150,7 +147,6 @@ async function updateRecentActivity() {
             let icon = '';
             let timeDisplay = '';
 
-            // Lógica para saber si lo último que hizo fue entrar o salir
             if (record.status === 'Completado' && record.exit_time) {
                 actionText = 'Salió';
                 icon = '<i class="fas fa-arrow-left text-danger me-2"></i>';
@@ -161,7 +157,6 @@ async function updateRecentActivity() {
                 timeDisplay = new Date(record.entry_time).toLocaleTimeString();
             }
 
-            // Creamos el elemento de la lista y lo inyectamos en el HTML
             const li = `
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
@@ -213,17 +208,16 @@ document.querySelectorAll('.parking-spot').forEach(spot => {
     });
 });
 
-// Inicializar la gráfica (vacía al principio)
+// Inicializar la gráfica
 async function initializeChart() {
     const ctx = document.getElementById('occupancyChart').getContext('2d');
-    
     occupancyChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [], // Se llenará con la API
+            labels: [], 
             datasets: [{
                 label: 'Espacios Ocupados',
-                data: [], // Se llenará con la API
+                data: [], 
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
                 tension: 0.4,
@@ -233,19 +227,16 @@ async function initializeChart() {
         options: {
             responsive: true,
             scales: { y: { beginAtZero: true, max: 8 } },
-            animation: { duration: 0 } // Desactiva la animación para que no salte al actualizarse sola
+            animation: { duration: 0 } 
         }
     });
-
-    await updateChartData(); // Traer los datos la primera vez
+    await updateChartData();
 }
 
-// Función para pedir los datos al servidor y redibujar
 async function updateChartData() {
     try {
         const response = await fetch(`${API_URL}/chart-data`);
         const result = await response.json();
-
         if (occupancyChartInstance) {
             occupancyChartInstance.data.labels = result.labels;
             occupancyChartInstance.data.datasets[0].data = result.data;
@@ -256,81 +247,119 @@ async function updateChartData() {
     }
 }
 
-// Manejo del modal de filtro
+// Filtros
 const applyFilterBtn = document.getElementById('applyFilterBtn');
-const filterModal = bootstrap.Modal.getInstance(document.getElementById('filterModal')) || new bootstrap.Modal(document.getElementById('filterModal'));
-
 applyFilterBtn.addEventListener('click', () => {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-
-    // Guardamos los valores actuales del filtro
-    currentStartDate = startDate;
-    currentEndDate = endDate;
-
-    updateRecordsTable(startDate, endDate);
-    filterModal.hide();
+    currentStartDate = document.getElementById('startDate').value;
+    currentEndDate = document.getElementById('endDate').value;
+    updateRecordsTable(currentStartDate, currentEndDate);
+    bootstrap.Modal.getInstance(document.getElementById('filterModal')).hide();
 });
 
-// Manejo del clic en el botón de exportar
-const exportBtn = document.getElementById('exportBtn');
-exportBtn.addEventListener('click', (e) => {
-    e.preventDefault(); // Evita que el enlace navegue a "#"
-
+// Exportar
+document.getElementById('exportBtn').addEventListener('click', (e) => {
+    e.preventDefault();
     let exportUrl = '/api/records/export';
-
-    // Si hay filtros aplicados, los añadimos a la URL
     if (currentStartDate && currentEndDate) {
         exportUrl += `?startDate=${currentStartDate}&endDate=${currentEndDate}`;
     }
-
-    // Redirigimos al usuario a la URL de exportación, lo que iniciará la descarga
     window.location.href = exportUrl;
 });
 
 // ==========================================
-// NAVEGACIÓN ENTRE SECCIONES (SPA)
+// NAVEGACIÓN SPA Y LÓGICA DE CONFIGURACIÓN
 // ==========================================
 
-// Seleccionamos los enlaces del menú
 const navInicio = document.getElementById('nav-inicio');
 const navHistorial = document.getElementById('nav-historial');
 const navConfiguracion = document.getElementById('nav-configuracion');
 
-// Seleccionamos los contenedores de las vistas
 const vistaInicio = document.getElementById('vista-inicio');
 const vistaHistorial = document.getElementById('vista-historial');
 const vistaConfiguracion = document.getElementById('vista-configuracion');
 
-// Función genérica para cambiar de vista
 function cambiarVista(vistaActiva, navActivo) {
-    // 1. Ocultar todas las vistas agregando la clase 'd-none' (display: none de Bootstrap)
     vistaInicio.classList.add('d-none');
     vistaHistorial.classList.add('d-none');
     vistaConfiguracion.classList.add('d-none');
-
-    // 2. Quitar la clase 'active' de todos los enlaces del menú
     navInicio.classList.remove('active');
     navHistorial.classList.remove('active');
     navConfiguracion.classList.remove('active');
-
-    // 3. Mostrar la vista seleccionada y activar su enlace
     vistaActiva.classList.remove('d-none');
     navActivo.classList.add('active');
 }
 
-// Event Listeners para cada botón
-navInicio.addEventListener('click', (e) => {
-    e.preventDefault(); // Evita que la página salte hacia arriba
-    cambiarVista(vistaInicio, navInicio);
+navInicio.addEventListener('click', (e) => { e.preventDefault(); cambiarVista(vistaInicio, navInicio); });
+navHistorial.addEventListener('click', (e) => { e.preventDefault(); cambiarVista(vistaHistorial, navHistorial); });
+
+// EVENTO: Al hacer clic en Configuración, cargar datos del servidor
+navConfiguracion.addEventListener('click', async (e) => { 
+    e.preventDefault(); 
+    cambiarVista(vistaConfiguracion, navConfiguracion); 
+    
+    try {
+        const res = await fetch(`${API_URL}/settings`);
+        const settings = await res.json();
+        
+        document.getElementById('inputBaseFee').value = settings.baseFee;
+        document.getElementById('inputExtraFee').value = settings.additionalHourFee;
+        document.getElementById('inputMaxFee').value = settings.maxDailyFee;
+        document.getElementById('inputParkingName').value = settings.parkingName;
+    } catch (error) {
+        console.error("Error cargando configuración:", error);
+    }
 });
 
-navHistorial.addEventListener('click', (e) => {
+// Guardar Tarifas
+document.getElementById('feesForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    cambiarVista(vistaHistorial, navHistorial);
+    const baseFee = parseInt(document.getElementById('inputBaseFee').value);
+    const additionalHourFee = parseInt(document.getElementById('inputExtraFee').value);
+    const maxDailyFee = parseInt(document.getElementById('inputMaxFee').value);
+
+    try {
+        const res = await fetch(`${API_URL}/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ baseFee, additionalHourFee, maxDailyFee })
+        });
+        if (res.ok) alert("Tarifas actualizadas correctamente.");
+    } catch (error) {
+        alert("Error al guardar tarifas.");
+    }
 });
 
-navConfiguracion.addEventListener('click', (e) => {
-    e.preventDefault();
-    cambiarVista(vistaConfiguracion, navConfiguracion);
-});
+// Simulador de Cobro
+function simularCobro() {
+    const mins = parseInt(document.getElementById('simMinutes').value);
+    if (!mins) return;
+
+    const base = parseInt(document.getElementById('inputBaseFee').value);
+    const extra = parseInt(document.getElementById('inputExtraFee').value);
+    const max = parseInt(document.getElementById('inputMaxFee').value);
+
+    let total = 0;
+    if (mins <= 60) {
+        total = base;
+    } else {
+        const hours = Math.ceil(mins / 60);
+        total = base + (hours - 1) * extra;
+    }
+    total = Math.min(total, max);
+    document.getElementById('simResult').textContent = `$ ${total.toLocaleString()}`;
+}
+
+// Actualizar Nombre del Establecimiento
+async function actualizarConfigGral() {
+    const parkingName = document.getElementById('inputParkingName').value;
+    try {
+        await fetch(`${API_URL}/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parkingName })
+        });
+        alert("Configuración general actualizada.");
+    } catch (error) {
+        alert("Error al actualizar.");
+    }
+}
