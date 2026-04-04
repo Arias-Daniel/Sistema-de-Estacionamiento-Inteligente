@@ -34,21 +34,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* Transición suave para todos los cambios de estilo */
-            transition: all 0.5s ease-in-out; 
-            position: relative;
-            overflow: hidden;
-        }
-
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        .spot-occupied-anim {
-            animation: pulse-red 2s infinite;
-            border-color: var(--neon-red) !important;
+            transition: border-color 0.3s ease; /* Solo transición de color simple */
         }
 
         .glass-nav {
@@ -71,14 +57,14 @@
             border: 1px solid var(--neon-cyan);
             border-radius: 30px;
             padding: 0.4rem 1.2rem;
-            transition: 0.3s;
             text-decoration: none;
+            font-weight: 600;
         }
 
         .btn-neon:hover {
             background: var(--neon-cyan);
             color: var(--bg-dark);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
         }
 
         .public-header { padding: 100px 0 20px 0; }
@@ -97,8 +83,8 @@
             border-radius: 20px;
         }
 
-        .glow-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
-        .glow-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .glow-text-green { color: var(--neon-green); text-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        .glow-text-red { color: var(--neon-red); text-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
     </style>
 </head>
 <body>
@@ -117,14 +103,14 @@
             <h1 class="fw-bold text-white mb-3">Estado en Tiempo Real</h1>
             
             <div id="smartStatusContainer" class="mb-4">
-                <span class="badge rounded-pill p-3 fs-6 shadow-sm" id="smartBadge" style="border: 1px solid var(--neon-cyan); color: var(--neon-cyan);">
+                <span class="badge rounded-pill p-3 fs-6" id="smartBadge" style="border: 1px solid var(--neon-cyan); color: var(--neon-cyan);">
                     <i class="fas fa-sync-alt fa-spin me-2"></i>Sincronizando...
                 </span>
             </div>
 
             <div class="row justify-content-center mb-4">
                 <div class="col-auto">
-                    <div class="p-3 rounded-4 shadow-lg d-flex align-items-center" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 254, 0.2); backdrop-filter: blur(10px);">
+                    <div class="p-3 rounded-4 shadow d-flex align-items-center" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 254, 0.2);">
                         <div class="px-3 border-end border-secondary text-center">
                             <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Base</small>
                             <span class="text-white fs-5 fw-bold" id="baseFeeDisplay">$ --</span>
@@ -214,9 +200,6 @@
             } catch (e) {}
         }
 
-        // VARIABLE PARA GUARDAR EL ESTADO ANTERIOR (Evita refrescos innecesarios)
-        let previousState = {};
-
         async function updateStatus() {
             try {
                 const res = await fetch('/api/parking-status');
@@ -229,30 +212,18 @@
                         const badge = el.querySelector('.badge');
                         const icon = el.querySelector('.spot-icon');
                         
-                        // Detectamos si el estado cambió desde la última vez
-                        const hasChanged = previousState[spot.id] !== spot.is_occupied;
-
                         if (spot.is_occupied) {
                             occupied++;
-                            if (hasChanged) {
-                                el.classList.add('spot-occupied-anim');
-                                // Efecto visual de entrada
-                                el.style.transform = "scale(1.02)";
-                                setTimeout(() => { el.style.transform = "scale(1)"; }, 400);
-                            }
+                            el.style.borderColor = 'var(--neon-red)';
                             badge.textContent = 'OCUPADO';
                             badge.className = 'badge bg-danger';
                             icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
                         } else {
-                            if (hasChanged) {
-                                el.classList.remove('spot-occupied-anim');
-                            }
+                            el.style.borderColor = 'var(--neon-green)';
                             badge.textContent = 'LIBRE';
                             badge.className = 'badge bg-success';
                             icon.className = 'fas fa-car fa-2x mb-2 glow-text-green';
                         }
-                        // Actualizamos el estado previo
-                        previousState[spot.id] = spot.is_occupied;
                     }
                 });
 
@@ -261,11 +232,9 @@
                 if (avail === 0) {
                     sb.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> NIVEL 1 LLENO`;
                     sb.style.color = 'var(--neon-red)';
-                    sb.style.borderColor = 'var(--neon-red)';
                 } else {
                     sb.innerHTML = `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
                     sb.style.color = 'var(--neon-cyan)';
-                    sb.style.borderColor = 'var(--neon-cyan)';
                 }
             } catch (e) { console.error(e); }
         }
@@ -275,7 +244,7 @@
             if(!p) return alert("Ingrese placa");
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById("qrcode"), { 
-                text: JSON.stringify({ p: p, t: new Date().toISOString() }), 
+                text: JSON.stringify({ placa: p, fecha: new Date().toISOString() }), 
                 width: 180, height: 180 
             });
             document.getElementById('displayPlate').textContent = p;
@@ -290,12 +259,10 @@
             document.getElementById('qrSection').classList.add('d-none');
         }
 
-        // INICIALIZACIÓN
+        // Ejecución
         updateFees(); 
         updateStatus();
-
-        // Ciclo rápido de 2 segundos. La "Memoria de Estado" hará que sea fluido.
-        setInterval(updateStatus, 2000); 
+        setInterval(updateStatus, 3000); // 3 segundos es seguro para sincronización
         setInterval(updateFees, 30000);
     </script>
 </body>
