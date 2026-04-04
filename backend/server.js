@@ -215,26 +215,26 @@ app.get("/api/chart-data", async (req, res) => {
 
         if (error) throw error;
 
-        // Horas que mostraremos en el eje X de la gráfica (8 AM a 6 PM)
-        const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+        // Ampliamos el horario para pruebas en la noche (De 8 AM a 9 PM)
+        const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
         const labels = hours.map(h => `${h}:00`);
         
         const data = hours.map(hour => {
             let occupiedAtHour = 0;
             
             records.forEach(record => {
-                // Ajustar a zona horaria de Colombia para evitar desfases en el servidor (Render)
+                // Ajustar a zona horaria de Colombia
                 const entryStr = new Date(record.entry_time).toLocaleString("en-US", {timeZone: "America/Bogota"});
                 const entryHour = new Date(entryStr).getHours();
                 
-                let exitHour = 24; // Si no ha salido, se asume que sigue hasta el final del día
+                let exitHour = 24; // Si no ha salido, sigue ocupando espacio
                 if (record.exit_time) {
                     const exitStr = new Date(record.exit_time).toLocaleString("en-US", {timeZone: "America/Bogota"});
                     exitHour = new Date(exitStr).getHours();
                 }
 
-                // Si el vehículo entró antes o durante esa hora, y salió después de esa hora
-                if (entryHour <= hour && exitHour > hour) {
+                // CORRECCIÓN: Si el carro estuvo presente durante esa hora (incluso si entró y salió en la misma hora)
+                if (entryHour <= hour && exitHour >= hour) {
                     occupiedAtHour++;
                 }
             });
