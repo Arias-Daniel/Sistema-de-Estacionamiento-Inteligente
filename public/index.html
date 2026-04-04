@@ -14,6 +14,7 @@
             --neon-cyan: #00f2fe;
             --neon-green: #10b981;
             --neon-red: #ef4444;
+            --primary-color: #2c3e50;
         }
 
         body {
@@ -26,9 +27,9 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            margin: 0;
         }
 
-        /* NAVBAR EFECTO CRISTAL */
         .glass-nav {
             background: rgba(15, 23, 42, 0.8) !important;
             backdrop-filter: blur(12px);
@@ -51,7 +52,7 @@
             padding: 0.4rem 1.2rem;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+            text-decoration: none;
         }
 
         .btn-neon:hover {
@@ -60,45 +61,29 @@
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
         }
 
-        /* PESTAÑAS FUTURISTAS */
         .public-header {
-            padding: 80px 0 30px 0; /* Espacio para el navbar fijo */
-        }
-
-        .nav-tabs {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 100px 0 30px 0;
         }
 
         .nav-tabs .nav-link {
             color: #94a3b8;
             border: none;
-            background: transparent;
-            font-size: 1.1rem;
             padding: 1rem 2rem;
-            transition: 0.3s;
-        }
-
-        .nav-tabs .nav-link:hover {
-            color: var(--neon-cyan);
         }
 
         .nav-tabs .nav-link.active {
             color: var(--neon-cyan);
             background: rgba(0, 242, 254, 0.05);
             border-bottom: 2px solid var(--neon-cyan);
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
         }
 
-        /* PANEL PRINCIPAL (GLASSMORPHISM) */
         .glass-card {
             background: var(--bg-panel);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
-        /* ESPACIOS DE PARQUEO */
         .futuristic-spot {
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -110,10 +95,114 @@
             transition: all 0.4s ease;
         }
 
-        .futuristic-spot.available {
-            border-color: rgba(16, 185, 129, 0.3);
-            box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.05);
+        .glow-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .glow-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg glass-nav fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="fas fa-satellite-dish me-2 fs-4" style="color: var(--neon-cyan);"></i>
+                <span class="brand-text">SMART PARKING V2</span>
+            </a>
+            <a href="login.html" class="btn btn-neon">
+                <i class="fas fa-fingerprint me-2"></i>Personal
+            </a>
+        </div>
+    </nav>
+
+    <div class="public-header text-center">
+        <div class="container">
+            <h1 class="fw-bold text-white">Estado de Plazas en Tiempo Real</h1>
+            <p class="text-secondary mb-5">Monitoreo automatizado con visión artificial</p>
+            
+            <ul class="nav nav-tabs justify-content-center border-0" id="floorTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#piso1" type="button">Nivel 1</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#piso2" type="button">Nivel 2</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#piso3" type="button">Nivel 3</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container mb-5 flex-grow-1">
+        <div class="glass-card p-4">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="piso1">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="text-white mb-0">Sensores Activos - Nivel 1</h4>
+                        <div class="p-2 rounded bg-dark border border-secondary">
+                            <span class="status-indicator" style="background: var(--neon-green);"></span> <span class="small me-3">Libre</span>
+                            <span class="status-indicator" style="background: var(--neon-red);"></span> <span class="small">Ocupado</span>
+                        </div>
+                    </div>
+                    <div class="row g-4" id="parkingMapContainer">
+                        </div>
+                </div>
+                <div class="tab-pane fade text-center py-5" id="piso2">
+                    <div class="spinner-border text-info mb-3" role="status"></div>
+                    <h3>Nivel 2 en Calibración</h3>
+                    <p class="text-muted">Las plazas de este nivel estarán disponibles próximamente.</p>
+                </div>
+                <div class="tab-pane fade text-center py-5" id="piso3">
+                    <i class="fas fa-lock fa-3x mb-3 text-secondary"></i>
+                    <h3>Nivel 3 Bloqueado</h3>
+                    <p class="text-muted">Mantenimiento de infraestructura en curso.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const container = document.getElementById('parkingMapContainer');
+        // Generar 8 espacios
+        for(let i=1; i<=8; i++) {
+            container.innerHTML += `
+                <div class="col-md-3 col-sm-6">
+                    <div class="futuristic-spot" data-spot="${i}">
+                        <div class="text-center w-100">
+                            <i class="fas fa-car fa-2x mb-2 spot-icon"></i>
+                            <div class="fw-bold fs-5 text-white">P1 - ${i}</div>
+                            <span class="badge badge-status">SINCRONIZANDO...</span>
+                        </div>
+                    </div>
+                </div>`;
         }
 
-        .futuristic-spot.occupied {
-            border-color: rgba(239, 68, 68, 0.3);
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/parking-status'); [cite: 12]
+                const { data } = await res.json(); [cite: 13]
+                data.forEach(spot => {
+                    const el = document.querySelector(`.futuristic-spot[data-spot="${spot.id}"]`);
+                    if (el) {
+                        const badge = el.querySelector('.badge');
+                        const icon = el.querySelector('.spot-icon');
+                        if (spot.is_occupied) { [cite: 129]
+                            el.style.borderColor = 'var(--neon-red)';
+                            badge.textContent = 'OCUPADO';
+                            badge.className = 'badge bg-danger';
+                            icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
+                        } else { [cite: 130]
+                            el.style.borderColor = 'var(--neon-green)';
+                            badge.textContent = 'DISPONIBLE';
+                            badge.className = 'badge bg-success';
+                            icon.className = 'fas fa-car fa-2x mb-2 glow-text-green';
+                        }
+                    }
+                });
+            } catch (e) { console.error(e); }
+        }
+        updateStatus();
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>
