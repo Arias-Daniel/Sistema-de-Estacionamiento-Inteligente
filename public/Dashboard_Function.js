@@ -21,7 +21,7 @@ async function updateDashboard() {
     await updateStats();
     await updateRecordsTable(currentStartDate, currentEndDate); // Mantiene los filtros activos si hay auto-refresh
     await updateChartData(); // Llama a la gráfica en cada actualización
-    await updateRecentActivity(); // <--- Llama a la actividad reciente en cada actualización
+    await updateRecentActivity(); // Llama a la actividad reciente en cada actualización
 }
 
 // 1. Actualizar el mapa de estacionamiento
@@ -273,4 +273,51 @@ exportBtn.addEventListener('click', (e) => {
 
     // Redirigimos al usuario a la URL de exportación, lo que iniciará la descarga
     window.location.href = exportUrl;
+});
+
+// ==========================================
+// NAVEGACIÓN ENTRE SECCIONES (SPA)
+// ==========================================
+
+// Seleccionamos los enlaces del menú
+const navInicio = document.getElementById('nav-inicio');
+const navHistorial = document.getElementById('nav-historial');
+const navConfiguracion = document.getElementById('nav-configuracion');
+
+// Seleccionamos los contenedores de las vistas
+const vistaInicio = document.getElementById('vista-inicio');
+const vistaHistorial = document.getElementById('vista-historial');
+const vistaConfiguracion = document.getElementById('vista-configuracion');
+
+// Función genérica para cambiar de vista
+function cambiarVista(vistaActiva, navActivo) {
+    // 1. Ocultar todas las vistas agregando la clase 'd-none' (display: none de Bootstrap)
+    vistaInicio.classList.add('d-none');
+    vistaHistorial.classList.add('d-none');
+    vistaConfiguracion.classList.add('d-none');
+
+    // 2. Quitar la clase 'active' de todos los enlaces del menú
+    navInicio.classList.remove('active');
+    navHistorial.classList.remove('active');
+    navConfiguracion.classList.remove('active');
+
+    // 3. Mostrar la vista seleccionada y activar su enlace
+    vistaActiva.classList.remove('d-none');
+    navActivo.classList.add('active');
+}
+
+// Event Listeners para cada botón
+navInicio.addEventListener('click', (e) => {
+    e.preventDefault(); // Evita que la página salte hacia arriba
+    cambiarVista(vistaInicio, navInicio);
+});
+
+navHistorial.addEventListener('click', (e) => {
+    e.preventDefault();
+    cambiarVista(vistaHistorial, navHistorial);
+});
+
+navConfiguracion.addEventListener('click', (e) => {
+    e.preventDefault();
+    cambiarVista(vistaConfiguracion, navConfiguracion);
 });
