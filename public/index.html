@@ -27,13 +27,12 @@
             overflow-x: hidden;
         }
 
-        /* ANIMACIONES DE ENTRADA */
+        /* --- ANIMACIONES --- */
         @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* EFECTOS DE PULSO */
         @keyframes pulse-green {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
@@ -56,12 +55,13 @@
             justify-content: center;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
-            animation: fadeInScale 0.6s ease-out;
+            animation: fadeInScale 0.6s ease-out backwards;
         }
 
         .spot-occupied-anim { animation: pulse-red 2s infinite; border-color: var(--neon-red) !important; }
         .spot-free-anim { animation: pulse-green 2s infinite; border-color: var(--neon-green) !important; }
 
+        /* --- NAVEGACIÓN Y BOTONES --- */
         .glass-nav {
             background: rgba(15, 23, 42, 0.9) !important;
             backdrop-filter: blur(12px);
@@ -74,7 +74,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 800;
-            letter-spacing: 1px;
         }
 
         .btn-neon {
@@ -97,8 +96,19 @@
 
         .public-header { padding: 110px 0 20px 0; }
 
-        .glow-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
-        .glow-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .nav-tabs .nav-link { color: #94a3b8; border: none; padding: 1rem 2rem; transition: 0.3s; }
+        .nav-tabs .nav-link.active {
+            color: var(--neon-cyan);
+            background: rgba(0, 242, 254, 0.05);
+            border-bottom: 2px solid var(--neon-cyan);
+        }
+
+        .glass-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+        }
     </style>
 </head>
 <body>
@@ -108,7 +118,9 @@
                 <i class="fas fa-satellite-dish me-2 fs-4" style="color: var(--neon-cyan);"></i>
                 <span class="brand-text">SMART PARKING V2</span>
             </a>
-            <a href="login.html" class="btn btn-neon btn-sm">Personal</a>
+            <a href="login.html" class="btn btn-neon btn-sm">
+                <i class="fas fa-fingerprint me-2"></i>Personal
+            </a>
         </div>
     </nav>
 
@@ -142,8 +154,12 @@
             </div>
             
             <ul class="nav nav-tabs justify-content-center border-0" id="floorTabs">
-                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#piso1">Nivel 1</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#piso2">Nivel 2</button></li>
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#piso1">Nivel 1</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#piso2">Nivel 2</button>
+                </li>
             </ul>
         </div>
     </div>
@@ -157,7 +173,7 @@
                             for(let i=1; i<=8; i++) {
                                 document.write(`
                                     <div class="col-md-3 col-6">
-                                        <div class="futuristic-spot" data-spot="${i}">
+                                        <div class="futuristic-spot" data-spot="${i}" style="animation-delay: ${i*0.1}s">
                                             <div class="text-center w-100">
                                                 <i class="fas fa-car fa-2x mb-2 spot-icon"></i>
                                                 <div class="fw-bold fs-5 text-white">P1 - ${i}</div>
@@ -171,7 +187,9 @@
                     </div>
                 </div>
                 <div class="tab-pane fade text-center py-5" id="piso2">
-                    <h3 class="text-secondary">Nivel 2 Próximamente</h3>
+                    <div class="spinner-border text-info mb-3" role="status"></div>
+                    <h3 class="text-info">Nivel 2 en Calibración</h3>
+                    <p class="text-muted">Próximamente disponible para usuarios.</p>
                 </div>
             </div>
         </div>
@@ -248,7 +266,7 @@
                 sb.innerHTML = avail === 0 ? `<i class="fas fa-ban me-2"></i> LLENO` : `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
                 sb.style.color = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
                 sb.style.borderColor = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
-            } catch (e) { console.error(e); }
+            } catch (e) {}
         }
 
         async function generateQR() {
@@ -256,13 +274,11 @@
             if(!p) return alert("Ingrese placa");
 
             const btn = document.querySelector('#inputSection button');
-            btn.innerText = "BUSCANDO..."; btn.disabled = true;
+            btn.innerText = "VERIFICANDO..."; btn.disabled = true;
 
             try {
                 const res = await fetch('/api/parking-status');
                 const dataObj = await res.json();
-                
-                // VALIDACIÓN: La placa debe estar físicamente en un espacio ocupado
                 const activeSpot = dataObj.data.find(s => s.is_occupied && s.license_plate === p);
 
                 if (activeSpot) {
@@ -276,14 +292,14 @@
                     document.getElementById('inputSection').classList.add('d-none');
                     document.getElementById('qrSection').classList.remove('d-none');
                 } else {
-                    alert("ERROR: La placa " + p + " no ha sido detectada por las cámaras de entrada.");
+                    alert("ERROR: La placa " + p + " no se encuentra en el estacionamiento.");
                 }
             } catch (e) { alert("Error de conexión"); }
             finally { btn.innerText = "VERIFICAR Y CREAR"; btn.disabled = false; }
         }
 
         updateFees(); updateStatus();
-        setInterval(updateStatus, 2000); // 2 segundos para tiempo real total
+        setInterval(updateStatus, 2500); 
         setInterval(updateFees, 30000);
     </script>
 </body>
