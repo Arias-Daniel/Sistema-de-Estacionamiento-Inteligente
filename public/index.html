@@ -38,6 +38,7 @@
 
         .brand-text {
             background: linear-gradient(90deg, #fff, var(--neon-cyan));
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 800;
@@ -61,16 +62,10 @@
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
         }
 
-        .public-header {
-            padding: 100px 0 30px 0;
-        }
+        .public-header { padding: 100px 0 30px 0; }
 
-        .nav-tabs .nav-link {
-            color: #94a3b8;
-            border: none;
-            padding: 1rem 2rem;
-        }
-
+        .nav-tabs .nav-link { color: #94a3b8; border: none; padding: 1rem 2rem; transition: 0.3s; }
+        .nav-tabs .nav-link:hover { color: var(--neon-cyan); }
         .nav-tabs .nav-link.active {
             color: var(--neon-cyan);
             background: rgba(0, 242, 254, 0.05);
@@ -86,7 +81,7 @@
 
         .futuristic-spot {
             background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             height: 130px;
             display: flex;
@@ -163,7 +158,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const container = document.getElementById('parkingMapContainer');
-        // Generar 8 espacios
+        // Generar estructura visual de los 8 espacios
         for(let i=1; i<=8; i++) {
             container.innerHTML += `
                 <div class="col-md-3 col-sm-6">
@@ -171,7 +166,7 @@
                         <div class="text-center w-100">
                             <i class="fas fa-car fa-2x mb-2 spot-icon"></i>
                             <div class="fw-bold fs-5 text-white">P1 - ${i}</div>
-                            <span class="badge badge-status">SINCRONIZANDO...</span>
+                            <span class="badge">SINCRONIZANDO...</span>
                         </div>
                     </div>
                 </div>`;
@@ -179,19 +174,22 @@
 
         async function updateStatus() {
             try {
-                const res = await fetch('/api/parking-status'); [cite: 12]
-                const { data } = await res.json(); [cite: 13]
+                const res = await fetch('/api/parking-status');
+                const dataObj = await res.json();
+                const data = dataObj.data;
+
                 data.forEach(spot => {
                     const el = document.querySelector(`.futuristic-spot[data-spot="${spot.id}"]`);
                     if (el) {
                         const badge = el.querySelector('.badge');
                         const icon = el.querySelector('.spot-icon');
-                        if (spot.is_occupied) { [cite: 129]
+                        
+                        if (spot.is_occupied) {
                             el.style.borderColor = 'var(--neon-red)';
                             badge.textContent = 'OCUPADO';
                             badge.className = 'badge bg-danger';
                             icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
-                        } else { [cite: 130]
+                        } else {
                             el.style.borderColor = 'var(--neon-green)';
                             badge.textContent = 'DISPONIBLE';
                             badge.className = 'badge bg-success';
@@ -199,8 +197,12 @@
                         }
                     }
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("Error al obtener estado:", e); 
+            }
         }
+
+        // Ejecutar inmediatamente y luego cada 5 segundos
         updateStatus();
         setInterval(updateStatus, 5000);
     </script>
