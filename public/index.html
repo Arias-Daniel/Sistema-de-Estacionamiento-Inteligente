@@ -162,7 +162,7 @@
             border-radius: 20px;
         }
 
-        /* ESTILO PARA EL BOTÓN LATERAL DE AYUDA */
+        /* --- BOTÓN LATERAL DE SALIDA --- */
         .side-help-btn {
             position: fixed;
             top: 50%;
@@ -182,7 +182,6 @@
             color: var(--bg-dark);
         }
         
-        /* ESTILO DEL PANEL DESPLEGABLE */
         .glass-offcanvas {
             background: rgba(15, 23, 42, 0.95) !important;
             backdrop-filter: blur(20px);
@@ -203,12 +202,19 @@
             <div class="face bottom"></div>
         </div>
     </div>
+    
     <nav class="navbar navbar-expand-lg glass-nav fixed-top">
         <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand d-flex align-items-center" href="#">
-                <i class="fas fa-satellite-dish me-2 fs-4" style="color: var(--neon-cyan);"></i>
-                <span class="brand-text">SMART PARKING V2</span>
-            </a>
+            <div class="d-flex align-items-center gap-4">
+                <a class="navbar-brand d-flex align-items-center m-0" href="#">
+                    <i class="fas fa-satellite-dish me-2 fs-4" style="color: var(--neon-cyan);"></i>
+                    <span class="brand-text">SMART PARKING V2</span>
+                </a>
+                
+                <button class="btn btn-sm text-light" data-bs-toggle="modal" data-bs-target="#aboutModal" style="border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0, 242, 254, 0.05); transition: 0.3s;">
+                    <i class="fas fa-users me-2" style="color: var(--neon-cyan);"></i>¿Quiénes Somos?
+                </button>
+            </div>
             <a href="login.html" class="btn btn-neon btn-sm">
                 <i class="fas fa-fingerprint me-2"></i>Personal
             </a>
@@ -300,7 +306,7 @@
     <div class="offcanvas offcanvas-end glass-offcanvas" tabindex="-1" id="helpOffcanvas" aria-labelledby="helpOffcanvasLabel">
         <div class="offcanvas-header border-bottom border-secondary">
             <h5 class="offcanvas-title fw-bold" id="helpOffcanvasLabel" style="color: var(--neon-cyan);">
-                <i class="fas fa-info-circle me-2"></i>¿Cómo generar ticket de salida?
+                <i class="fas fa-info-circle me-2"></i>¿Cómo generar ticket?
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
@@ -311,7 +317,7 @@
                 <div class="me-3"><i class="fas fa-keyboard fs-3 text-info"></i></div>
                 <div>
                     <h6 class="fw-bold text-white mb-1">1. Ingresa tu placa</h6>
-                    <p class="small text-secondary mb-0">Haz clic en "Generar Ticket Digital" e ingresa la placa de tu vehículo. El sistema verificará tu ingreso con los sensores.</p>
+                    <p class="small text-secondary mb-0">Haz clic en "Generar Ticket Digital" e ingresa la placa. El sistema verificará tu ingreso con los sensores.</p>
                 </div>
             </div>
 
@@ -359,6 +365,36 @@
                         <h2 id="displayPlate" class="text-info fw-bold mb-1"></h2>
                         <p id="displayTime" class="text-secondary small"></p>
                         <button class="btn btn-outline-secondary btn-sm mt-3" onclick="resetUI()">Nuevo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card p-4" style="background: #020617; border: 2px solid var(--neon-cyan); border-radius: 25px;">
+                
+                <div class="modal-header border-0 pb-0 justify-content-center position-relative">
+                    <h4 class="text-white fw-bold mb-0" style="color: var(--neon-cyan) !important;">
+                        <i class="fas fa-microchip me-2"></i>Nuestra Misión
+                    </h4>
+                    <button type="button" class="btn-close btn-close-white position-absolute end-0" data-bs-dismiss="modal" style="top: 0;"></button>
+                </div>
+                
+                <div class="modal-body text-center pt-4">
+                    <p class="text-secondary small mb-4" style="text-align: justify; line-height: 1.6;">
+                        Transformamos la movilidad urbana mediante un <strong>Sistema de Estacionamiento Inteligente</strong> basado en arquitectura de Internet de las Cosas (IoT) y tecnología de sistemas embebidos. Nuestra solución optimiza el tiempo de búsqueda, reduce el impacto ambiental y democratiza el control operativo para modernizar la infraestructura actual.
+                    </p>
+                    
+                    <div class="border-top border-secondary pt-4 mt-2">
+                        <h6 class="text-white fw-bold mb-3" style="letter-spacing: 1px;">EQUIPO DESARROLLADOR</h6>
+                        <div class="d-flex flex-column gap-2 text-info small font-monospace">
+                            <span><i class="fas fa-user-astronaut me-2"></i>Camilo Andres Arenillas Pineda</span>
+                            <span><i class="fas fa-user-astronaut me-2"></i>Daniel Enrique Arias Montero</span>
+                            <span><i class="fas fa-user-astronaut me-2"></i>Cesar Stiven Hernandez Fuentes</span>
+                        </div>
+                        <p class="text-muted mt-4 mb-0" style="font-size: 0.65rem; letter-spacing: 1px;">UNIVERSIDAD NACIONAL DE COLOMBIA - SEDE LA PAZ (2026)</p>
                     </div>
                 </div>
             </div>
