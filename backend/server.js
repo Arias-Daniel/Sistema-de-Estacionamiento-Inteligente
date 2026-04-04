@@ -202,7 +202,52 @@ app.get("/api/stats", async (req, res) => {
     }
 });
 
-// 6. EXPORTAR registros a EXCEL (con filtros)
+// 6. Endpoint para datos de la Gráfica (Ocupación por hora de hoy)
+app.get("/api/chart-data", async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Traer todos los registros del día de hoy
+        const { data: records, error } = await supabase
+            .from('parking_records')
+            .select('entry_time, exit_time')
+            .gte('entry_time', today);
+
+        if (error) throw error;
+
+        // Horas que mostraremos en el eje X de la gráfica (8 AM a 6 PM)
+        const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+        const labels = hours.map(h => `${h}:00`);
+        
+        const data = hours.map(hour => {
+            let occupiedAtHour = 0;
+            
+            records.forEach(record => {
+                // Ajustar a zona horaria de Colombia para evitar desfases en el servidor (Render)
+                const entryStr = new Date(record.entry_time).toLocaleString("en-US", {timeZone: "America/Bogota"});
+                const entryHour = new Date(entryStr).getHours();
+                
+                let exitHour = 24; // Si no ha salido, se asume que sigue hasta el final del día
+                if (record.exit_time) {
+                    const exitStr = new Date(record.exit_time).toLocaleString("en-US", {timeZone: "America/Bogota"});
+                    exitHour = new Date(exitStr).getHours();
+                }
+
+                // Si el vehículo entró antes o durante esa hora, y salió después de esa hora
+                if (entryHour <= hour && exitHour > hour) {
+                    occupiedAtHour++;
+                }
+            });
+            return occupiedAtHour;
+        });
+
+        res.json({ labels, data });
+    } catch (err) {
+        res.status(400).json({ "error": err.message });
+    }
+});
+
+// 7. EXPORTAR registros a EXCEL (con filtros)
 app.get("/api/records/export", async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
@@ -223,7 +268,7 @@ app.get("/api/records/export", async (req, res) => {
         const { data: records, error } = await query;
         if (error) throw error;
 
-        // --- Lógica para crear el archivo Excel (Igual que antes) ---
+        // --- Lógica para crear el archivo Excel ---
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Registros');
 

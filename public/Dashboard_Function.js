@@ -1,7 +1,6 @@
 let currentStartDate = null;
 let currentEndDate = null;
-
-// backend/Dashboard_Function.js (corregido)
+let occupancyChartInstance; // Variable global para guardar la gráfica
 
 const API_URL = '/api';
 
@@ -12,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Actualización periódica cada 10 segundos
     setInterval(updateDashboard, 10000);
 
-    // Inicializar el gráfico (se actualizará con datos reales)
+    // Inicializar el gráfico (ahora conectado al backend)
     initializeChart();
 });
 
@@ -20,8 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
 async function updateDashboard() {
     await updateParkingSpots();
     await updateStats();
-    await updateRecordsTable();
-    // Aquí podrías agregar llamadas para actualizar la actividad reciente y el gráfico
+    await updateRecordsTable(currentStartDate, currentEndDate); // Mantiene los filtros activos si hay auto-refresh
+    await updateChartData(); // <--- Llama a la gráfica en cada actualización
 }
 
 // 1. Actualizar el mapa de estacionamiento
@@ -66,11 +65,7 @@ async function updateStats() {
     }
 }
 
-// 3. Actualizar la tabla de registros
-
-// public/Dashboard_Function.js (MODIFICAR esta función)
-
-// 3. Actualizar la tabla de registros (ahora con filtros opcionales)
+// 3. Actualizar la tabla de registros (con filtros opcionales)
 async function updateRecordsTable(startDate, endDate) {
     try {
         // Construimos la URL con los parámetros de filtro si existen
@@ -79,7 +74,7 @@ async function updateRecordsTable(startDate, endDate) {
             url += `?startDate=${startDate}&endDate=${endDate}`;
         }
 
-        const response = await fetch(url); // Usamos la nueva URL
+        const response = await fetch(url);
         const { data } = await response.json();
         
         const tbody = document.querySelector('.table tbody');
@@ -91,7 +86,6 @@ async function updateRecordsTable(startDate, endDate) {
         }
 
         data.forEach(record => {
-            // ... (el resto de la función sigue igual)
              const entryTime = new Date(record.entry_time).toLocaleTimeString();
              const exitTime = record.exit_time ? new Date(record.exit_time).toLocaleTimeString() : '-';
              const duration = record.duration_minutes ? `${record.duration_minutes} min` : 'En curso';
@@ -151,16 +145,17 @@ document.querySelectorAll('.parking-spot').forEach(spot => {
     });
 });
 
-// Gráfico (aún con datos de ejemplo, se puede conectar a un nuevo endpoint)
-function initializeChart() {
+// Inicializar la gráfica (vacía al principio)
+async function initializeChart() {
     const ctx = document.getElementById('occupancyChart').getContext('2d');
-    new Chart(ctx, {
+    
+    occupancyChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00'],
+            labels: [], // Se llenará con la API
             datasets: [{
                 label: 'Espacios Ocupados',
-                data: [2, 4, 3, 5, 6, 7, 8], // TODO: Cargar estos datos desde un endpoint
+                data: [], // Se llenará con la API
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
                 tension: 0.4,
@@ -169,14 +164,34 @@ function initializeChart() {
         },
         options: {
             responsive: true,
-            scales: { y: { beginAtZero: true, max: 8 } }
+            scales: { y: { beginAtZero: true, max: 8 } },
+            animation: { duration: 0 } // Desactiva la animación para que no salte al actualizarse sola
         }
     });
+
+    await updateChartData(); // Traer los datos la primera vez
 }
 
-// public/Dashboard_Function.js (Añadir esto al final)
+// Función para pedir los datos al servidor y redibujar
+async function updateChartData() {
+    try {
+        const response = await fetch(`${API_URL}/chart-data`);
+        const result = await response.json();
+
+        if (occupancyChartInstance) {
+            occupancyChartInstance.data.labels = result.labels;
+            occupancyChartInstance.data.datasets[0].data = result.data;
+            occupancyChartInstance.update();
+        }
+    } catch (error) {
+        console.error('Error al actualizar gráfica:', error);
+    }
+}
 
 // Manejo del modal de filtro
+const applyFilterBtn = document.getElementById('applyFilterBtn');
+const filterModal = bootstrap.Modal.getInstance(document.getElementById('filterModal')) || new bootstrap.Modal(document.getElementById('filterModal'));
+
 applyFilterBtn.addEventListener('click', () => {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
@@ -189,7 +204,7 @@ applyFilterBtn.addEventListener('click', () => {
     filterModal.hide();
 });
 
-// AÑADE este nuevo código al final del archivo para manejar el clic en el botón de exportar
+// Manejo del clic en el botón de exportar
 const exportBtn = document.getElementById('exportBtn');
 exportBtn.addEventListener('click', (e) => {
     e.preventDefault(); // Evita que el enlace navegue a "#"
