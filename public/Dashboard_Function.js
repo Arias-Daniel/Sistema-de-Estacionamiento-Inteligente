@@ -20,7 +20,8 @@ async function updateDashboard() {
     await updateParkingSpots();
     await updateStats();
     await updateRecordsTable(currentStartDate, currentEndDate); // Mantiene los filtros activos si hay auto-refresh
-    await updateChartData(); // <--- Llama a la gráfica en cada actualización
+    await updateChartData(); // Llama a la gráfica en cada actualización
+    await updateRecentActivity(); // <--- Llama a la actividad reciente en cada actualización
 }
 
 // 1. Actualizar el mapa de estacionamiento
@@ -108,6 +109,60 @@ async function updateRecordsTable(startDate, endDate) {
         });
     } catch (error) {
         console.error('Error al actualizar la tabla de registros:', error);
+    }
+}
+
+// 4. Actualizar la Actividad Reciente
+async function updateRecentActivity() {
+    try {
+        // Pedimos los registros al servidor
+        const response = await fetch(`${API_URL}/records`);
+        const { data } = await response.json();
+        
+        const ul = document.querySelector('.recent-activity ul');
+        if (!ul) return;
+
+        ul.innerHTML = ''; // Limpiamos el mensaje de "Esperando..."
+
+        if (data.length === 0) {
+            ul.innerHTML = '<li class="list-group-item text-center text-muted">Aún no hay registros.</li>';
+            return;
+        }
+
+        // Tomamos solo los 5 registros más recientes
+        const recentRecords = data.slice(0, 5);
+
+        recentRecords.forEach(record => {
+            let actionText = '';
+            let icon = '';
+            let timeDisplay = '';
+
+            // Lógica para saber si lo último que hizo fue entrar o salir
+            if (record.status === 'Completado' && record.exit_time) {
+                actionText = 'Salió';
+                icon = '<i class="fas fa-arrow-left text-danger me-2"></i>';
+                timeDisplay = new Date(record.exit_time).toLocaleTimeString();
+            } else {
+                actionText = 'Entró';
+                icon = '<i class="fas fa-arrow-right text-success me-2"></i>';
+                timeDisplay = new Date(record.entry_time).toLocaleTimeString();
+            }
+
+            // Creamos el elemento de la lista y lo inyectamos en el HTML
+            const li = `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        ${icon}
+                        <strong>${record.license_plate}</strong>
+                        <span class="ms-2 text-muted small">${actionText}</span>
+                    </div>
+                    <span class="badge bg-light text-dark">${timeDisplay}</span>
+                </li>
+            `;
+            ul.innerHTML += li;
+        });
+    } catch (error) {
+        console.error('Error al actualizar la actividad reciente:', error);
     }
 }
 
