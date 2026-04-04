@@ -214,7 +214,7 @@
                         <div id="qrcode" class="bg-white p-3 d-inline-block rounded-4 mb-3 shadow-lg"></div>
                         <h2 id="displayPlate" class="text-info fw-bold mb-1"></h2>
                         <p id="displayTime" class="text-secondary small"></p>
-                        <button class="btn btn-outline-secondary btn-sm mt-3" onclick="location.reload()">Nuevo</button>
+                        <button class="btn btn-outline-secondary btn-sm mt-3" onclick="resetUI()">Nuevo</button>
                     </div>
                 </div>
             </div>
@@ -270,7 +270,8 @@
         }
 
         async function generateQR() {
-            const p = document.getElementById('plateInput').value.trim().toUpperCase();
+            const plateInputRaw = document.getElementById('plateInput').value.trim();
+            const p = plateInputRaw.toUpperCase();
             if(!p) return alert("Ingrese placa");
 
             const btn = document.querySelector('#inputSection button');
@@ -279,23 +280,52 @@
             try {
                 const res = await fetch('/api/parking-status');
                 const dataObj = await res.json();
-                const activeSpot = dataObj.data.find(s => s.is_occupied && s.license_plate === p);
+                
+                console.log("Respuesta de la API:", dataObj.data); 
 
-                if (activeSpot) {
+                const apiSendsPlates = dataObj.data.some(s => s.hasOwnProperty('license_plate'));
+
+                let isValid = false;
+                let activeSpotId = "N/A";
+
+                if (!apiSendsPlates) {
+                    // MODO BYPASS
+                    const occupiedSpots = dataObj.data.filter(s => s.is_occupied);
+                    if (occupiedSpots.length > 0) {
+                        isValid = true;
+                        activeSpotId = occupiedSpots[0].id;
+                        alert("⚠️ MODO BYPASS ACTIVO:\nLa placa se generó, pero tu servidor NO está enviando la variable 'license_plate' al HTML para validar estrictamente. Verifica tu archivo server.js");
+                    }
+                } else {
+                    // MODO ESTRICTO
+                    const activeSpot = dataObj.data.find(s => s.is_occupied && s.license_plate && s.license_plate.trim().toUpperCase() === p);
+                    if (activeSpot) {
+                        isValid = true;
+                        activeSpotId = activeSpot.id;
+                    }
+                }
+
+                if (isValid) {
                     document.getElementById('qrcode').innerHTML = "";
                     new QRCode(document.getElementById("qrcode"), { 
                         text: JSON.stringify({ placa: p, entrada: new Date().toISOString() }), 
                         width: 200, height: 200 
                     });
                     document.getElementById('displayPlate').innerText = p;
-                    document.getElementById('displayTime').innerText = "Vínculo con Sensor P1-" + activeSpot.id + " Establecido";
+                    document.getElementById('displayTime').innerText = "Vínculo con Sensor P1-" + activeSpotId + " Establecido";
                     document.getElementById('inputSection').classList.add('d-none');
                     document.getElementById('qrSection').classList.remove('d-none');
                 } else {
-                    alert("ERROR: La placa " + p + " no se encuentra en el estacionamiento.");
+                    alert(`ERROR: No se puede validar la placa.\nVerifique que haya ingresado correctamente al estacionamiento y coincida con el registro.`);
                 }
-            } catch (e) { alert("Error de conexión"); }
+            } catch (e) { alert("Error de conexión"); console.error(e); }
             finally { btn.innerText = "VERIFICAR Y CREAR"; btn.disabled = false; }
+        }
+
+        function resetUI() {
+            document.getElementById('plateInput').value = "";
+            document.getElementById('inputSection').classList.remove('d-none');
+            document.getElementById('qrSection').classList.add('d-none');
         }
 
         updateFees(); updateStatus();
