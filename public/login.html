@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Personal | Smart Parking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            background-image: radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.05), transparent 60%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .login-card {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            color: white;
+        }
+        .login-icon {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #00f2fe, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+        .form-control {
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .form-control:focus {
+            background-color: rgba(15, 23, 42, 0.9);
+            color: white;
+            border-color: #00f2fe;
+            box-shadow: 0 0 0 0.25rem rgba(0, 242, 254, 0.25);
+        }
+        .input-group-text {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+        }
+        .btn-login {
+            background: linear-gradient(90deg, #00f2fe, #3b82f6);
+            border: none;
+            color: #0f172a;
+            font-weight: bold;
+            padding: 0.6rem;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card text-center">
+        <i class="fas fa-shield-alt login-icon"></i>
+        <h4 class="mb-2 fw-bold">Acceso Restringido</h4>
+        <p class="text-secondary mb-4 small">Ingresa tus credenciales administrativas</p>
+
+        <div id="errorAlert" class="alert alert-danger d-none py-2 small" role="alert"></div>
+        
+        <form id="loginForm">
+            <div class="mb-3 text-start">
+                <label class="form-label text-white-50 small">Usuario</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input type="text" class="form-control" id="username" required placeholder="Ej: admin">
+                </div>
+            </div>
+            <div class="mb-4 text-start">
+                <label class="form-label text-white-50 small">Contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input type="password" class="form-control" id="password" required placeholder="••••••••">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-login w-100 mb-3">INGRESAR AL SISTEMA</button>
+        </form>
+        
+        <div class="mt-3 border-top border-secondary pt-3" style="border-color: rgba(255,255,255,0.1) !important;">
+            <a href="index.html" class="text-info small text-decoration-none" style="opacity: 0.8;">
+                <i class="fas fa-arrow-left me-1"></i> Volver a la vista pública
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const alertBox = document.getElementById('errorAlert');
+
+            try {
+                // Llama al endpoint que creamos en el backend (server.js)
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Guardamos una bandera en el navegador para saber que está logueado
+                    localStorage.setItem('auth_token', 'true');
+                    // Redirige al panel de control protegido
+                    window.location.href = '/admin.html'; 
+                } else {
+                    // Muestra el error si la contraseña es incorrecta
+                    alertBox.textContent = result.message;
+                    alertBox.classList.remove('d-none');
+                }
+            } catch (error) {
+                alertBox.textContent = "Error de conexión con el servidor.";
+                alertBox.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>

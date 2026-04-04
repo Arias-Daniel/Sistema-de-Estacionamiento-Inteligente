@@ -1,3 +1,16 @@
+// ==========================================
+// PROTECCIÓN DE RUTA (SEGURIDAD)
+// ==========================================
+if (localStorage.getItem('auth_token') !== 'true') {
+    window.location.href = '/login.html';
+}
+
+// Función para cerrar sesión (si lo necesitas en el futuro)
+function logout() {
+    localStorage.removeItem('auth_token');
+    window.location.href = '/login.html';
+}
+
 let currentStartDate = null;
 let currentEndDate = null;
 let occupancyChartInstance; // Variable global para guardar la gráfica

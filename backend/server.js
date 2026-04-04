@@ -310,6 +310,18 @@ app.get("/api/records/export", async (req, res) => {
     }
 });
 
+// 8. Endpoint de Login (Seguridad básica para el Dashboard)
+app.post("/api/login", (req, res) => {
+    const { username, password } = req.body;
+    
+    // Credenciales quemadas para la sustentación de TPI II
+    if (username === "admin" && password === "tpi2026") {
+        res.json({ success: true, message: "Acceso autorizado" });
+    } else {
+        res.status(401).json({ success: false, message: "Usuario o contraseña incorrectos" });
+    }
+});
+
 app.use(function (req, res) {
     res.status(404).send("Ruta no encontrada");
 });
