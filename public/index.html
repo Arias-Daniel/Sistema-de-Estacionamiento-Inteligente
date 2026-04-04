@@ -27,6 +27,50 @@
             overflow-x: hidden;
         }
 
+        /* --- FONDO 3D ANIMADO (NUEVO) --- */
+        .bg-cube-wrapper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            height: 400px;
+            margin-top: -200px;
+            margin-left: -200px;
+            perspective: 1000px;
+            z-index: -1; /* Al fondo de todo */
+            pointer-events: none; /* No estorba al hacer clic */
+        }
+
+        .bg-cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: rotateCube 25s infinite linear;
+        }
+
+        .bg-cube .face {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(0, 242, 254, 0.02); /* Relleno holográfico super suave */
+            border: 1px solid rgba(0, 242, 254, 0.15); /* Borde neón sutil */
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.05) inset;
+        }
+
+        .bg-cube .front  { transform: rotateY(  0deg) translateZ(200px); }
+        .bg-cube .back   { transform: rotateY(180deg) translateZ(200px); }
+        .bg-cube .right  { transform: rotateY( 90deg) translateZ(200px); }
+        .bg-cube .left   { transform: rotateY(-90deg) translateZ(200px); }
+        .bg-cube .top    { transform: rotateX( 90deg) translateZ(200px); }
+        .bg-cube .bottom { transform: rotateX(-90deg) translateZ(200px); }
+
+        @keyframes rotateCube {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+        }
+        /* --------------------------------- */
+
         /* --- ANIMACIONES --- */
         @keyframes fadeInScale {
             from { opacity: 0; transform: scale(0.9) translateY(20px); }
@@ -112,6 +156,17 @@
     </style>
 </head>
 <body>
+
+    <div class="bg-cube-wrapper">
+        <div class="bg-cube">
+            <div class="face front"></div>
+            <div class="face back"></div>
+            <div class="face right"></div>
+            <div class="face left"></div>
+            <div class="face top"></div>
+            <div class="face bottom"></div>
+        </div>
+    </div>
     <nav class="navbar navbar-expand-lg glass-nav fixed-top">
         <div class="container d-flex justify-content-between align-items-center">
             <a class="navbar-brand d-flex align-items-center" href="#">
