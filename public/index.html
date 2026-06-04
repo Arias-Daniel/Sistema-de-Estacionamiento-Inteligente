@@ -6,7 +6,6 @@
     <title>Estacionamiento Inteligente | Estado en Vivo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
         :root {
@@ -162,7 +161,7 @@
             border-radius: 20px;
         }
 
-        /* --- BOTÓN LATERAL DE SALIDA --- */
+        /* --- BOTÓN LATERAL DE AYUDA --- */
         .side-help-btn {
             position: fixed;
             top: 50%;
@@ -221,9 +220,10 @@
         </div>
     </nav>
 
+    <!-- Botón lateral de info -->
     <button class="btn btn-neon side-help-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="helpOffcanvas">
-        <i class="fas fa-question-circle fs-5 mb-1 d-block"></i>
-        <small style="writing-mode: vertical-rl; text-orientation: mixed; font-size: 0.7rem; letter-spacing: 2px;">SALIDA</small>
+        <i class="fas fa-info-circle fs-5 mb-1 d-block"></i>
+        <small style="writing-mode: vertical-rl; text-orientation: mixed; font-size: 0.7rem; letter-spacing: 2px;">INFO</small>
     </button>
 
     <div class="public-header text-center">
@@ -249,7 +249,7 @@
                         </div>
                         <div class="px-4 text-center">
                             <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Max Día</small>
-                            <span class="glow-text-green fs-5 fw-bold" id="maxFeeDisplay">$ --</span>
+                            <span class="text-white fs-5 fw-bold" id="maxFeeDisplay">$ --</span>
                         </div>
                     </div>
                 </div>
@@ -266,7 +266,7 @@
         </div>
     </div>
 
-    <div class="container mb-4">
+    <div class="container mb-5">
         <div class="glass-card p-4">
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="piso1">
@@ -295,53 +295,48 @@
                 </div>
             </div>
         </div>
-
-        <div class="text-center mt-5 mb-5">
-            <button class="btn btn-neon shadow-lg" data-bs-toggle="modal" data-bs-target="#ticketModal">
-                <i class="fas fa-qrcode me-2"></i> Generar Ticket Digital
-            </button>
-        </div>
     </div>
 
+    <!-- Offcanvas de información del sistema -->
     <div class="offcanvas offcanvas-end glass-offcanvas" tabindex="-1" id="helpOffcanvas" aria-labelledby="helpOffcanvasLabel">
         <div class="offcanvas-header border-bottom border-secondary">
             <h5 class="offcanvas-title fw-bold" id="helpOffcanvasLabel" style="color: var(--neon-cyan);">
-                <i class="fas fa-info-circle me-2"></i>¿Cómo generar ticket?
+                <i class="fas fa-info-circle me-2"></i>¿Cómo funciona el sistema?
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <p class="text-light mb-4">El sistema mecatrónico automatiza tu salida mediante visión artificial y QRs:</p>
+            <p class="text-light mb-4">El sistema gestiona tu entrada y salida de forma totalmente automática mediante visión por computadora:</p>
             
             <div class="d-flex mb-4">
-                <div class="me-3"><i class="fas fa-keyboard fs-3 text-info"></i></div>
+                <div class="me-3"><i class="fas fa-camera fs-3 text-info"></i></div>
                 <div>
-                    <h6 class="fw-bold text-white mb-1">1. Ingresa tu placa</h6>
-                    <p class="small text-secondary mb-0">Haz clic en "Generar Ticket Digital" e ingresa la placa. El sistema verificará tu ingreso con los sensores.</p>
+                    <h6 class="fw-bold text-white mb-1">1. Entrada automática</h6>
+                    <p class="small text-secondary mb-0">Al ingresar, la cámara lee tu placa automáticamente y registra tu entrada en el sistema.</p>
                 </div>
             </div>
 
             <div class="d-flex mb-4">
-                <div class="me-3"><i class="fas fa-qrcode fs-3 text-info"></i></div>
+                <div class="me-3"><i class="fas fa-parking fs-3 text-success"></i></div>
                 <div>
-                    <h6 class="fw-bold text-white mb-1">2. Obtén tu Código</h6>
-                    <p class="small text-secondary mb-0">Si tu vehículo está estacionado correctamente, se creará un código QR único enlazado a tu placa.</p>
+                    <h6 class="fw-bold text-white mb-1">2. Estacionamiento</h6>
+                    <p class="small text-secondary mb-0">El mapa se actualiza en tiempo real. Puedes consultar la disponibilidad de espacios desde esta pantalla.</p>
                 </div>
             </div>
 
             <div class="d-flex mb-4">
-                <div class="me-3"><i class="fas fa-camera fs-3 text-success"></i></div>
+                <div class="me-3"><i class="fas fa-camera fs-3 text-warning"></i></div>
                 <div>
-                    <h6 class="fw-bold text-white mb-1">3. Escanea en la salida</h6>
-                    <p class="small text-secondary mb-0">Acerca este código a la cámara del escáner en el punto de salida.</p>
+                    <h6 class="fw-bold text-white mb-1">3. Salida automática</h6>
+                    <p class="small text-secondary mb-0">Al salir, la cámara vuelve a leer tu placa, verifica tu registro y autoriza la salida automáticamente.</p>
                 </div>
             </div>
 
             <div class="d-flex">
                 <div class="me-3"><i class="fas fa-door-open fs-3 text-success"></i></div>
                 <div>
-                    <h6 class="fw-bold text-white mb-1">4. Salida Automática</h6>
-                    <p class="small text-secondary mb-0">¡La talanquera se levantará automáticamente y finalizará tu tiempo!</p>
+                    <h6 class="fw-bold text-white mb-1">4. Sin filas, sin papeles</h6>
+                    <p class="small text-secondary mb-0">Todo el proceso es sin contacto. El sistema calcula tu tarifa y registra la duración automáticamente.</p>
                 </div>
             </div>
             
@@ -351,26 +346,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="ticketModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content glass-card p-4" style="background: #020617; border: 2px solid var(--neon-cyan); border-radius: 25px;">
-                <div class="modal-body text-center">
-                    <div id="inputSection">
-                        <h4 class="text-white mb-4">Verificación de Vehículo</h4>
-                        <input type="text" id="plateInput" class="form-control form-control-lg bg-dark text-white text-center border-info mb-4" placeholder="ABC-123" style="text-transform: uppercase;">
-                        <button class="btn btn-neon w-100" onclick="generateQR()">VERIFICAR Y CREAR</button>
-                    </div>
-                    <div id="qrSection" class="d-none">
-                        <div id="qrcode" class="bg-white p-3 d-inline-block rounded-4 mb-3 shadow-lg"></div>
-                        <h2 id="displayPlate" class="text-info fw-bold mb-1"></h2>
-                        <p id="displayTime" class="text-secondary small"></p>
-                        <button class="btn btn-outline-secondary btn-sm mt-3" onclick="resetUI()">Nuevo</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Modal ¿Quiénes Somos? -->
     <div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content glass-card p-4" style="background: #020617; border: 2px solid var(--neon-cyan); border-radius: 25px;">
@@ -443,72 +419,16 @@
 
                 const avail = d.data.length - occupied;
                 const sb = document.getElementById('smartBadge');
-                sb.innerHTML = avail === 0 ? `<i class="fas fa-ban me-2"></i> LLENO` : `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
+                sb.innerHTML = avail === 0 
+                    ? `<i class="fas fa-ban me-2"></i> LLENO` 
+                    : `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
                 sb.style.color = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
                 sb.style.borderColor = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
             } catch (e) {}
         }
 
-        async function generateQR() {
-            const plateInputRaw = document.getElementById('plateInput').value.trim();
-            const p = plateInputRaw.toUpperCase();
-            if(!p) return alert("Ingrese placa");
-
-            const btn = document.querySelector('#inputSection button');
-            btn.innerText = "VERIFICANDO..."; btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/parking-status');
-                const dataObj = await res.json();
-                
-                console.log("Respuesta de la API:", dataObj.data); 
-
-                const apiSendsPlates = dataObj.data.some(s => s.hasOwnProperty('license_plate'));
-
-                let isValid = false;
-                let activeSpotId = "N/A";
-
-                if (!apiSendsPlates) {
-                    // MODO BYPASS
-                    const occupiedSpots = dataObj.data.filter(s => s.is_occupied);
-                    if (occupiedSpots.length > 0) {
-                        isValid = true;
-                        activeSpotId = occupiedSpots[0].id;
-                        alert("⚠️ MODO BYPASS ACTIVO:\nLa placa se generó, pero tu servidor NO está enviando la variable 'license_plate' al HTML para validar estrictamente. Verifica tu archivo server.js");
-                    }
-                } else {
-                    // MODO ESTRICTO
-                    const activeSpot = dataObj.data.find(s => s.is_occupied && s.license_plate && s.license_plate.trim().toUpperCase() === p);
-                    if (activeSpot) {
-                        isValid = true;
-                        activeSpotId = activeSpot.id;
-                    }
-                }
-
-                if (isValid) {
-                    document.getElementById('qrcode').innerHTML = "";
-                    new QRCode(document.getElementById("qrcode"), { 
-                        text: JSON.stringify({ placa: p, entrada: new Date().toISOString() }), 
-                        width: 200, height: 200 
-                    });
-                    document.getElementById('displayPlate').innerText = p;
-                    document.getElementById('displayTime').innerText = "Vínculo con Sensor P1-" + activeSpotId + " Establecido";
-                    document.getElementById('inputSection').classList.add('d-none');
-                    document.getElementById('qrSection').classList.remove('d-none');
-                } else {
-                    alert(`ERROR: No se puede validar la placa.\nVerifique que haya ingresado correctamente al estacionamiento y coincida con el registro.`);
-                }
-            } catch (e) { alert("Error de conexión"); console.error(e); }
-            finally { btn.innerText = "VERIFICAR Y CREAR"; btn.disabled = false; }
-        }
-
-        function resetUI() {
-            document.getElementById('plateInput').value = "";
-            document.getElementById('inputSection').classList.remove('d-none');
-            document.getElementById('qrSection').classList.add('d-none');
-        }
-
-        updateFees(); updateStatus();
+        updateFees();
+        updateStatus();
         setInterval(updateStatus, 2500); 
         setInterval(updateFees, 30000);
     </script>
