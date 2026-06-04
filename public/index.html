@@ -3,434 +3,1324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estacionamiento Inteligente | Estado en Vivo</title>
+    <title>CAHPARK | Sistema de Estacionamiento Inteligente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-panel: rgba(30, 41, 59, 0.7);
-            --neon-cyan: #00f2fe;
-            --neon-green: #10b981;
-            --neon-red: #ef4444;
+            --bg-dark:    #060d1a;
+            --bg-panel:   rgba(10, 20, 40, 0.75);
+            --bg-card:    rgba(16, 30, 58, 0.6);
+            --cyan:       #00f2fe;
+            --cyan-dim:   rgba(0, 242, 254, 0.12);
+            --green:      #00e5a0;
+            --green-dim:  rgba(0, 229, 160, 0.12);
+            --red:        #ff4d6d;
+            --red-dim:    rgba(255, 77, 109, 0.12);
+            --amber:      #ffb703;
+            --border:     rgba(0, 242, 254, 0.15);
+            --font-display: 'Oxanium', sans-serif;
+            --font-body:    'DM Sans', sans-serif;
         }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
 
         body {
             background-color: var(--bg-dark);
-            color: #e2e8f0;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-image: radial-gradient(circle at 15% 50%, rgba(0, 242, 254, 0.05), transparent 25%);
+            color: #c8d8f0;
+            font-family: var(--font-body);
             min-height: 100vh;
-            margin: 0;
             overflow-x: hidden;
         }
 
-        /* --- FONDO 3D ANIMADO --- */
-        .bg-cube-wrapper {
+        /* ── CANVAS DE PARTÍCULAS ── */
+        #particles-canvas {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 400px;
-            height: 400px;
-            margin-top: -200px;
-            margin-left: -200px;
-            perspective: 1000px;
-            z-index: -1; 
-            pointer-events: none; 
-            animation: floatAround 35s infinite ease-in-out alternate; 
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
         }
 
-        @keyframes floatAround {
-            0% { transform: translate(-35vw, -35vh); }
-            25% { transform: translate(35vw, -15vh); }
-            50% { transform: translate(-25vw, 35vh); }
-            75% { transform: translate(35vw, 35vh); }
-            100% { transform: translate(-35vw, -35vh); }
+        /* ── CAPA DE CONTENIDO ── */
+        .content-layer { position: relative; z-index: 1; }
+
+        /* ── NAVBAR ── */
+        .glass-nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            background: rgba(6, 13, 26, 0.88);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 0;
         }
 
-        .bg-cube {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: rotateCube 25s infinite linear;
-        }
-
-        .bg-cube .face {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: rgba(0, 242, 254, 0.02); 
-            border: 1px solid rgba(0, 242, 254, 0.15); 
-            box-shadow: 0 0 30px rgba(0, 242, 254, 0.05) inset;
-        }
-
-        .bg-cube .front  { transform: rotateY(  0deg) translateZ(200px); }
-        .bg-cube .back   { transform: rotateY(180deg) translateZ(200px); }
-        .bg-cube .right  { transform: rotateY( 90deg) translateZ(200px); }
-        .bg-cube .left   { transform: rotateY(-90deg) translateZ(200px); }
-        .bg-cube .top    { transform: rotateX( 90deg) translateZ(200px); }
-        .bg-cube .bottom { transform: rotateX(-90deg) translateZ(200px); }
-
-        @keyframes rotateCube {
-            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
-        }
-
-        /* --- ANIMACIONES --- */
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.9) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        .futuristic-spot {
-            background: var(--bg-panel);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            height: 135px;
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            animation: fadeInScale 0.6s ease-out backwards;
+            justify-content: space-between;
         }
 
-        .spot-occupied-anim { animation: pulse-red 2s infinite; border-color: var(--neon-red) !important; }
-        .spot-free-anim { animation: pulse-green 2s infinite; border-color: var(--neon-green) !important; }
-
-        /* --- NAVEGACIÓN Y BOTONES --- */
-        .glass-nav {
-            background: rgba(15, 23, 42, 0.9) !important;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+        /* ── LOGO BRAND ── */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
         }
 
-        .brand-text {
-            background: linear-gradient(90deg, #fff, var(--neon-cyan));
-            background-clip: text;
+        .brand-logo-svg {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.25rem;
+            background: linear-gradient(90deg, #fff 20%, var(--cyan));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 800;
+            background-clip: text;
+            letter-spacing: 3px;
         }
 
-        .btn-neon {
+        .brand-tagline {
+            font-family: var(--font-display);
+            font-size: 0.52rem;
+            letter-spacing: 2.5px;
+            color: #334155;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+        .btn-ghost {
             background: transparent;
-            color: var(--neon-cyan);
-            border: 2px solid var(--neon-cyan);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            padding: 0.45rem 1rem;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+
+        .btn-primary-neon {
+            background: transparent;
+            color: var(--cyan);
+            border: 1.5px solid var(--cyan);
+            border-radius: 8px;
+            padding: 0.45rem 1.3rem;
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary-neon:hover {
+            background: var(--cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 28px rgba(0,242,254,0.45);
+        }
+
+        /* ── LIVE DOT ── */
+        .live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: var(--font-display);
+            font-size: 0.68rem;
+            letter-spacing: 1.5px;
+            color: var(--green);
+        }
+        .live-dot::before {
+            content: '';
+            width: 7px; height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink 1.4s ease-in-out infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; box-shadow: 0 0 7px var(--green); }
+            50%       { opacity: 0.25; box-shadow: none; }
+        }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 136px 0 44px;
+            text-align: center;
+        }
+
+        .hero-eyebrow {
+            font-family: var(--font-display);
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.1s forwards;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: clamp(2.2rem, 5vw, 3.8rem);
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.1;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.25s forwards;
+        }
+
+        .hero-title span {
+            background: linear-gradient(90deg, var(--cyan), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: 1rem;
+            color: #64748b;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.4s forwards;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── STAT CHIPS ── */
+        .stat-chips {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.45s forwards;
+        }
+
+        .stat-chip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.8rem 1.6rem;
+            background: rgba(10,20,40,0.7);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            min-width: 110px;
+        }
+
+        .stat-chip-value {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--cyan);
+            line-height: 1;
+        }
+
+        .stat-chip-label {
+            font-family: var(--font-display);
+            font-size: 0.58rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #475569;
+            margin-top: 0.3rem;
+        }
+
+        /* ── STATUS BADGE ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 1.4rem;
             border-radius: 50px;
+            border: 1.5px solid var(--cyan);
+            color: var(--cyan);
+            font-family: var(--font-display);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.55s forwards;
+            transition: all 0.4s;
+        }
+        .status-badge.lleno {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* ── BARRA DE OCUPACIÓN ── */
+        .occupancy-bar-wrap {
+            max-width: 500px;
+            margin: 0 auto 2.5rem;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.65s forwards;
+        }
+
+        .occupancy-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
+        }
+
+        .occupancy-track {
+            height: 6px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .occupancy-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+            transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+            width: 0%;
+        }
+        .occupancy-fill.high {
+            background: linear-gradient(90deg, var(--amber), var(--red));
+        }
+
+        /* ── TARIFAS ── */
+        .tariff-strip {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(10,20,40,0.85);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            backdrop-filter: blur(14px);
+            margin-bottom: 2.5rem;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.75s forwards;
+        }
+
+        .tariff-item {
+            padding: 0.9rem 1.8rem;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+        .tariff-item:last-child { border-right: none; }
+
+        .tariff-label {
+            font-family: var(--font-display);
+            font-size: 0.57rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #475569;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .tariff-value {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* ── TABS ── */
+        .level-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 0;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.85s forwards;
+        }
+
+        .level-tab {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-bottom: none;
+            color: #64748b;
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
             padding: 0.6rem 2rem;
-            font-weight: bold;
-            transition: 0.3s;
+            border-radius: 10px 10px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .level-tab.active {
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            border-color: var(--border);
+        }
+
+        /* ── MAIN CONTENT AREA ── */
+        .main-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        /* ── GLASS CARD ── */
+        .glass-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 0 16px 16px 16px;
+            padding: 2rem;
+            opacity: 0;
+            animation: fadeUp 0.7s 0.95s forwards;
+        }
+
+        /* ── GRID DE ESPACIOS ── */
+        .spots-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 768px) {
+            .spots-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ── TARJETA DE ESPACIO ── */
+        .spot-card {
+            background: var(--bg-card);
+            border: 1.5px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 1.2rem 1rem;
+            text-align: center;
+            cursor: default;
+            transition: border-color 0.4s, box-shadow 0.4s, transform 0.3s;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fadeUp 0.5s ease-out backwards;
+        }
+
+        .spot-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .spot-card.libre {
+            border-color: rgba(0, 229, 160, 0.35);
+            box-shadow: 0 0 18px rgba(0, 229, 160, 0.08), inset 0 0 30px rgba(0,229,160,0.03);
+            animation: pulse-green-card 3s ease-in-out infinite, fadeUp 0.5s ease-out backwards;
+        }
+
+        .spot-card.libre::before {
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,229,160,0.06), transparent 70%);
+            opacity: 1;
+        }
+
+        .spot-card.ocupado {
+            border-color: rgba(255, 77, 109, 0.45);
+            box-shadow: 0 0 18px rgba(255, 77, 109, 0.1), inset 0 0 30px rgba(255,77,109,0.04);
+            animation: pulse-red-card 2.5s ease-in-out infinite, fadeUp 0.5s ease-out backwards;
+        }
+
+        .spot-card.ocupado::before {
+            background: radial-gradient(ellipse at 50% 0%, rgba(255,77,109,0.07), transparent 70%);
+            opacity: 1;
+        }
+
+        @keyframes pulse-green-card {
+            0%, 100% { box-shadow: 0 0 12px rgba(0,229,160,0.06), inset 0 0 20px rgba(0,229,160,0.02); }
+            50%       { box-shadow: 0 0 28px rgba(0,229,160,0.18), inset 0 0 30px rgba(0,229,160,0.06); }
+        }
+        @keyframes pulse-red-card {
+            0%, 100% { box-shadow: 0 0 12px rgba(255,77,109,0.08), inset 0 0 20px rgba(255,77,109,0.03); }
+            50%       { box-shadow: 0 0 28px rgba(255,77,109,0.22), inset 0 0 30px rgba(255,77,109,0.07); }
+        }
+
+        .spot-number {
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            color: #475569;
+            margin-bottom: 0.6rem;
             text-transform: uppercase;
         }
 
-        .btn-neon:hover {
-            background: var(--neon-cyan);
-            color: var(--bg-dark);
-            box-shadow: 0 0 25px var(--neon-cyan);
-            transform: translateY(-2px);
+        .spot-icon-wrap {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 0.7rem;
+            font-size: 1.3rem;
+            transition: all 0.4s;
         }
 
-        .public-header { padding: 110px 0 20px 0; }
+        .spot-card.libre .spot-icon-wrap   { background: rgba(0,229,160,0.12); color: var(--green); }
+        .spot-card.ocupado .spot-icon-wrap { background: rgba(255,77,109,0.12); color: var(--red); }
+        .spot-card:not(.libre):not(.ocupado) .spot-icon-wrap { background: rgba(255,255,255,0.05); color: #475569; }
 
-        .nav-tabs .nav-link { color: #94a3b8; border: none; padding: 1rem 2rem; transition: 0.3s; }
-        .nav-tabs .nav-link.active {
-            color: var(--neon-cyan);
-            background: rgba(0, 242, 254, 0.05);
-            border-bottom: 2px solid var(--neon-cyan);
+        .spot-badge {
+            display: inline-block;
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            padding: 0.25rem 0.7rem;
+            border-radius: 99px;
+            text-transform: uppercase;
+        }
+        .spot-badge.libre   { background: rgba(0,229,160,0.15); color: var(--green); }
+        .spot-badge.ocupado { background: rgba(255,77,109,0.15); color: var(--red); }
+        .spot-badge.loading { background: rgba(255,255,255,0.05); color: #475569; }
+
+        /* ── NIVEL 2 PLACEHOLDER ── */
+        .lvl2-placeholder {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        .lvl2-placeholder i {
+            font-size: 2.5rem;
+            color: #1e3a5f;
+            margin-bottom: 1rem;
+        }
+        .lvl2-placeholder h3 {
+            font-family: var(--font-display);
+            color: #1e3a5f;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
         }
 
-        .glass-card {
-            background: var(--bg-panel);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        /* ── INDICADOR ACTUALIZACIÓN ── */
+        .update-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: #334155;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
+        }
+        .update-indicator .dot {
+            width: 6px; height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink 1.4s ease-in-out infinite;
+        }
+
+        /* ══════════════════════════════════════
+           FOOTER COMPLETO
+        ══════════════════════════════════════ */
+        .site-footer {
+            border-top: 1px solid rgba(0,242,254,0.08);
+            margin-top: 2rem;
+            background: linear-gradient(180deg, transparent, rgba(0,10,24,0.6));
+        }
+
+        /* -- BAND de créditos técnicos -- */
+        .footer-tech-band {
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            padding: 1.2rem 0;
+        }
+
+        .footer-tech-list {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-tech-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 1.4rem;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            font-family: var(--font-display);
+            font-size: 0.68rem;
+            letter-spacing: 1.5px;
+            color: #334155;
+            text-transform: uppercase;
+        }
+        .footer-tech-item:last-child { border-right: none; }
+        .footer-tech-item i { color: var(--cyan); font-size: 0.75rem; }
+
+        /* -- Cuerpo del footer -- */
+        .footer-body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .footer-body { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 560px) {
+            .footer-body { grid-template-columns: 1fr; }
+        }
+
+        /* -- Columna brand -- */
+        .footer-brand-mark {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand-name {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 3px;
+        }
+
+        .footer-desc {
+            font-size: 0.82rem;
+            color: #334155;
+            line-height: 1.7;
+            margin-bottom: 1.2rem;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .social-btn {
+            width: 32px; height: 32px;
+            border: 1px solid rgba(0,242,254,0.2);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: #334155;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .social-btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+        }
+
+        /* -- Columnas info -- */
+        .footer-col-heading {
+            font-family: var(--font-display);
+            font-size: 0.62rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0,242,254,0.12);
+        }
+
+        .footer-info-list {
+            list-style: none;
+            font-size: 0.82rem;
+            color: #334155;
+            line-height: 2.1;
+        }
+
+        .footer-info-list strong { color: #4a6080; font-weight: 500; }
+
+        .footer-info-list li {
+            display: flex;
+            align-items: baseline;
+            gap: 0.4rem;
+        }
+        .footer-info-list li i {
+            font-size: 0.65rem;
+            color: #1e3a5f;
+            flex-shrink: 0;
+        }
+
+        /* -- Columna equipo -- */
+        .team-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .team-card:last-child { border-bottom: none; }
+
+        .team-avatar {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--cyan-dim);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display);
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: var(--cyan);
+            flex-shrink: 0;
+            letter-spacing: 1px;
+        }
+
+        .team-info {}
+
+        .team-name {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.3;
+        }
+
+        .team-role {
+            font-family: var(--font-display);
+            font-size: 0.57rem;
+            letter-spacing: 1.5px;
+            color: #1e3a5f;
+            text-transform: uppercase;
+        }
+
+        /* -- Footer bottom bar -- */
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.04);
+            padding: 1.4rem 1.5rem;
+        }
+
+        .footer-bottom-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .footer-copy {
+            font-family: var(--font-display);
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            color: #1e293b;
+        }
+
+        .footer-made {
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            color: #1e3a5f;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .footer-made i { color: var(--cyan); font-size: 0.6rem; }
+
+        /* ── MODAL ── */
+        .modal-content.dark-modal {
+            background: #070f1f;
+            border: 1.5px solid var(--border);
             border-radius: 20px;
+            color: #c8d8f0;
         }
 
-        /* --- BOTÓN LATERAL DE AYUDA --- */
-        .side-help-btn {
-            position: fixed;
-            top: 50%;
-            right: -5px;
-            transform: translateY(-50%);
-            z-index: 1040;
-            border-radius: 15px 0 0 15px;
-            padding: 1rem 1rem 1rem 1.5rem;
-            border-right: none;
-            box-shadow: -5px 0 15px rgba(0, 242, 254, 0.2);
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(5px);
+        .modal-header.dark-modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 1.2rem 1.5rem;
         }
-        .side-help-btn:hover {
-            right: 0;
-            background: var(--neon-cyan);
-            color: var(--bg-dark);
+
+        .modal-title-text {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--cyan);
         }
-        
-        .glass-offcanvas {
-            background: rgba(15, 23, 42, 0.95) !important;
-            backdrop-filter: blur(20px);
-            border-left: 2px solid var(--neon-cyan);
-            color: white;
+
+        .team-member {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
         }
+        .team-member:last-child { border-bottom: none; }
+
+        .member-avatar {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: var(--cyan-dim);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--cyan);
+            flex-shrink: 0;
+        }
+
+        .member-name { font-size: 0.85rem; color: #94a3b8; }
     </style>
 </head>
 <body>
 
-    <div class="bg-cube-wrapper">
-        <div class="bg-cube">
-            <div class="face front"></div>
-            <div class="face back"></div>
-            <div class="face right"></div>
-            <div class="face left"></div>
-            <div class="face top"></div>
-            <div class="face bottom"></div>
-        </div>
-    </div>
-    
-    <nav class="navbar navbar-expand-lg glass-nav fixed-top">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-4">
-                <a class="navbar-brand d-flex align-items-center m-0" href="#">
-                    <i class="fas fa-satellite-dish me-2 fs-4" style="color: var(--neon-cyan);"></i>
-                    <span class="brand-text">SMART PARKING V2</span>
-                </a>
-                
-                <button class="btn btn-sm text-light" data-bs-toggle="modal" data-bs-target="#aboutModal" style="border: 1px solid rgba(0, 242, 254, 0.4); background: rgba(0, 242, 254, 0.05); transition: 0.3s;">
-                    <i class="fas fa-users me-2" style="color: var(--neon-cyan);"></i>¿Quiénes Somos?
-                </button>
-            </div>
-            <a href="login.html" class="btn btn-neon btn-sm">
-                <i class="fas fa-fingerprint me-2"></i>Personal
+<!-- Canvas de partículas -->
+<canvas id="particles-canvas"></canvas>
+
+<div class="content-layer">
+
+    <!-- NAVBAR -->
+    <nav class="glass-nav">
+        <div class="nav-inner">
+
+            <!-- LOGO CAHPARK -->
+            <a class="brand" href="#">
+                <!-- SVG Logo Mark personalizado -->
+                <svg class="brand-logo-svg" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Fondo del icono -->
+                    <rect x="1" y="1" width="38" height="38" rx="9" stroke="#00f2fe" stroke-width="1.2" fill="rgba(0,242,254,0.05)"/>
+                    <!-- Arco C principal (representa la "C" de CAHPARK) -->
+                    <path d="M27 11.5 A10 10 0 1 0 27 28.5" stroke="#00f2fe" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+                    <!-- Punto sensor IoT en el centro -->
+                    <circle cx="20" cy="20" r="2" fill="#00f2fe" opacity="0.9"/>
+                    <circle cx="20" cy="20" r="4.5" stroke="#00f2fe" stroke-width="0.7" opacity="0.3" fill="none"/>
+                    <!-- Flecha de entrada (extremo derecho del arco) -->
+                    <line x1="26" y1="20" x2="33" y2="20" stroke="#00e5a0" stroke-width="1.8" stroke-linecap="round"/>
+                    <polyline points="30.5,17.5 33,20 30.5,22.5" stroke="#00e5a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+
+                <div>
+                    <div class="brand-name">CAHPARK</div>
+                    <div class="brand-tagline">Smart Parking System</div>
+                </div>
             </a>
+
+            <div class="nav-right">
+                <span class="live-dot">EN VIVO</span>
+                <button class="btn-ghost" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                    <i class="fas fa-users me-1"></i> Quiénes somos
+                </button>
+                <a href="login.html" class="btn-primary-neon">
+                    <i class="fas fa-fingerprint"></i> Personal
+                </a>
+            </div>
         </div>
     </nav>
 
-    <!-- Botón lateral de info -->
-    <button class="btn btn-neon side-help-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#helpOffcanvas" aria-controls="helpOffcanvas">
-        <i class="fas fa-info-circle fs-5 mb-1 d-block"></i>
-        <small style="writing-mode: vertical-rl; text-orientation: mixed; font-size: 0.7rem; letter-spacing: 2px;">INFO</small>
-    </button>
-
-    <div class="public-header text-center">
+    <!-- HERO -->
+    <div class="hero">
         <div class="container">
-            <h1 class="fw-bold text-white mb-3">ESTADO EN TIEMPO REAL</h1>
-            
-            <div id="smartStatusContainer" class="mb-4">
-                <span class="badge rounded-pill p-3 fs-6 shadow-sm" id="smartBadge" style="border: 2px solid var(--neon-cyan); color: var(--neon-cyan);">
-                    <i class="fas fa-sync-alt fa-spin me-2"></i>Sincronizando...
+            <p class="hero-eyebrow">Sistema de estacionamiento inteligente · IoT + Visión por computadora</p>
+            <h1 class="hero-title">Estado en <span>tiempo real</span></h1>
+            <p class="hero-sub">Monitoreo automático de disponibilidad mediante sensores y visión artificial</p>
+
+            <!-- Stat chips animados -->
+            <div class="stat-chips">
+                <div class="stat-chip">
+                    <span class="stat-chip-value" id="statSpots">8</span>
+                    <span class="stat-chip-label">Espacios</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="stat-chip-value" id="statSensors">8</span>
+                    <span class="stat-chip-label">Sensores</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="stat-chip-value">2.5s</span>
+                    <span class="stat-chip-label">Actualización</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="stat-chip-value">99%</span>
+                    <span class="stat-chip-label">Precisión</span>
+                </div>
+            </div>
+
+            <!-- Badge de estado -->
+            <div style="opacity:0; animation: fadeUp 0.6s 0.55s forwards;">
+                <span id="smartBadge" class="status-badge">
+                    <i class="fas fa-sync-alt fa-spin"></i> Sincronizando...
                 </span>
             </div>
 
-            <div class="row justify-content-center mb-4">
-                <div class="col-auto">
-                    <div class="p-3 rounded-4 shadow-lg d-flex align-items-center" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 254, 0.2); backdrop-filter: blur(10px);">
-                        <div class="px-4 border-end border-secondary text-center">
-                            <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Base</small>
-                            <span class="text-white fs-5 fw-bold" id="baseFeeDisplay">$ --</span>
-                        </div>
-                        <div class="px-4 border-end border-secondary text-center">
-                            <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Extra</small>
-                            <span class="text-white fs-5 fw-bold" id="extraFeeDisplay">$ --</span>
-                        </div>
-                        <div class="px-4 text-center">
-                            <small class="text-secondary d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Max Día</small>
-                            <span class="text-white fs-5 fw-bold" id="maxFeeDisplay">$ --</span>
-                        </div>
+            <!-- Barra de ocupación -->
+            <div class="occupancy-bar-wrap">
+                <div class="occupancy-labels">
+                    <span id="occupancyText">— de 8 espacios ocupados</span>
+                    <span id="occupancyPct">—%</span>
+                </div>
+                <div class="occupancy-track">
+                    <div class="occupancy-fill" id="occupancyFill"></div>
+                </div>
+            </div>
+
+            <!-- Tarifas -->
+            <div style="display:flex; justify-content:center; opacity:0; animation: fadeUp 0.6s 0.75s forwards;">
+                <div class="tariff-strip">
+                    <div class="tariff-item">
+                        <span class="tariff-label">Tarifa base</span>
+                        <span class="tariff-value" id="baseFeeDisplay">$ —</span>
+                    </div>
+                    <div class="tariff-item">
+                        <span class="tariff-label">Hora adicional</span>
+                        <span class="tariff-value" id="extraFeeDisplay">$ —</span>
+                    </div>
+                    <div class="tariff-item">
+                        <span class="tariff-label">Máximo día</span>
+                        <span class="tariff-value" id="maxFeeDisplay">$ —</span>
                     </div>
                 </div>
             </div>
-            
-            <ul class="nav nav-tabs justify-content-center border-0" id="floorTabs">
-                <li class="nav-item">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#piso1">Nivel 1</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#piso2">Nivel 2</button>
-                </li>
-            </ul>
+
+            <!-- Tabs de nivel -->
+            <div class="level-tabs">
+                <button class="level-tab active" id="tab-p1" onclick="switchLevel(1)">NIVEL 1</button>
+                <button class="level-tab" id="tab-p2" onclick="switchLevel(2)">NIVEL 2</button>
+            </div>
         </div>
     </div>
 
-    <div class="container mb-5">
-        <div class="glass-card p-4">
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="piso1">
-                    <div class="row g-4" id="parkingMapContainer">
-                        <script>
-                            for(let i=1; i<=8; i++) {
-                                document.write(`
-                                    <div class="col-md-3 col-6">
-                                        <div class="futuristic-spot" data-spot="${i}" style="animation-delay: ${i*0.1}s">
-                                            <div class="text-center w-100">
-                                                <i class="fas fa-car fa-2x mb-2 spot-icon"></i>
-                                                <div class="fw-bold fs-5 text-white">P1 - ${i}</div>
-                                                <span class="badge badge-status">--</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `);
-                            }
-                        </script>
+    <!-- MAPA PRINCIPAL -->
+    <div class="main-wrap">
+        <div class="glass-card">
+
+            <!-- Nivel 1 -->
+            <div id="piso1">
+                <div class="spots-grid" id="spotsGrid"></div>
+            </div>
+
+            <!-- Nivel 2 -->
+            <div id="piso2" style="display:none;">
+                <div class="lvl2-placeholder">
+                    <i class="fas fa-tools"></i>
+                    <h3>NIVEL 2 EN CALIBRACIÓN</h3>
+                    <p style="color:#1e3a5f; font-size:0.85rem; margin-top:0.5rem;">Próximamente disponible</p>
+                </div>
+            </div>
+
+            <!-- Indicador de actualización -->
+            <div class="update-indicator">
+                <span class="dot"></span>
+                <span>Actualizado <span id="lastUpdateText">hace un momento</span> · cada 2.5s</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         FOOTER COMPLETO
+    ══════════════════════════════════════ -->
+    <footer class="site-footer">
+
+        <!-- Banda tecnológica -->
+        <div class="footer-tech-band">
+            <div class="footer-tech-list">
+                <div class="footer-tech-item"><i class="fas fa-microchip"></i> ESP32</div>
+                <div class="footer-tech-item"><i class="fas fa-ruler-combined"></i> VL53L0X ToF</div>
+                <div class="footer-tech-item"><i class="fas fa-eye"></i> Visión por Computadora</div>
+                <div class="footer-tech-item"><i class="fas fa-database"></i> Supabase</div>
+                <div class="footer-tech-item"><i class="fab fa-node-js"></i> Node.js</div>
+                <div class="footer-tech-item"><i class="fas fa-wifi"></i> MQTT / HTTP</div>
+            </div>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="footer-body">
+
+            <!-- Columna 1: Brand -->
+            <div>
+                <div class="footer-brand-mark">
+                    <!-- Mini logo SVG -->
+                    <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+                        <rect x="1" y="1" width="38" height="38" rx="9" stroke="#00f2fe" stroke-width="1.2" fill="rgba(0,242,254,0.05)"/>
+                        <path d="M27 11.5 A10 10 0 1 0 27 28.5" stroke="#00f2fe" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="#00f2fe" opacity="0.9"/>
+                        <circle cx="20" cy="20" r="4.5" stroke="#00f2fe" stroke-width="0.7" opacity="0.3" fill="none"/>
+                        <line x1="26" y1="20" x2="33" y2="20" stroke="#00e5a0" stroke-width="1.8" stroke-linecap="round"/>
+                        <polyline points="30.5,17.5 33,20 30.5,22.5" stroke="#00e5a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                    <span class="footer-brand-name">CAHPARK</span>
+                </div>
+                <p class="footer-desc">
+                    Sistema de estacionamiento inteligente basado en arquitectura IoT y visión por computadora. Automatización en tiempo real sin infraestructura adicional, reduciendo tiempos de búsqueda y emisiones de CO₂.
+                </p>
+                <div class="footer-social">
+                    <a href="#" class="social-btn"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-btn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="social-btn"><i class="fas fa-globe"></i></a>
+                </div>
+            </div>
+
+            <!-- Columna 2: Proyecto -->
+            <div>
+                <p class="footer-col-heading">Proyecto académico</p>
+                <ul class="footer-info-list">
+                    <li><i class="fas fa-circle-dot"></i><span><strong>Asignatura:</strong> TPI II</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span><strong>Docente:</strong> Sebastian Robledo G.</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span><strong>Institución:</strong> UNAL Sede La Paz</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span><strong>Sede:</strong> La Paz, Cesar</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span><strong>Año:</strong> 2026</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span><strong>Versión:</strong> 1.0.0</span></li>
+                </ul>
+            </div>
+
+            <!-- Columna 3: Tecnología -->
+            <div>
+                <p class="footer-col-heading">Stack tecnológico</p>
+                <ul class="footer-info-list">
+                    <li><i class="fas fa-circle-dot"></i><span>ESP32 + VL53L0X ToF</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span>OpenCV / YOLOv8</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span>Supabase (PostgreSQL)</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span>Node.js + Express</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span>Bootstrap 5 + Vanilla JS</span></li>
+                    <li><i class="fas fa-circle-dot"></i><span>Actualización cada 2.5 s</span></li>
+                </ul>
+            </div>
+
+            <!-- Columna 4: Equipo -->
+            <div>
+                <p class="footer-col-heading">Equipo desarrollador</p>
+
+                <div class="team-card">
+                    <div class="team-avatar">CA</div>
+                    <div class="team-info">
+                        <div class="team-name">Camilo Andres<br>Arenillas Pineda</div>
+                        <div class="team-role">IoT · Hardware</div>
                     </div>
                 </div>
-                <div class="tab-pane fade text-center py-5" id="piso2">
-                    <div class="spinner-border text-info mb-3" role="status"></div>
-                    <h3 class="text-info">Nivel 2 en Calibración</h3>
-                    <p class="text-muted">Próximamente disponible para usuarios.</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Offcanvas de información del sistema -->
-    <div class="offcanvas offcanvas-end glass-offcanvas" tabindex="-1" id="helpOffcanvas" aria-labelledby="helpOffcanvasLabel">
-        <div class="offcanvas-header border-bottom border-secondary">
-            <h5 class="offcanvas-title fw-bold" id="helpOffcanvasLabel" style="color: var(--neon-cyan);">
-                <i class="fas fa-info-circle me-2"></i>¿Cómo funciona el sistema?
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <p class="text-light mb-4">El sistema gestiona tu entrada y salida de forma totalmente automática mediante visión por computadora:</p>
-            
-            <div class="d-flex mb-4">
-                <div class="me-3"><i class="fas fa-camera fs-3 text-info"></i></div>
-                <div>
-                    <h6 class="fw-bold text-white mb-1">1. Entrada automática</h6>
-                    <p class="small text-secondary mb-0">Al ingresar, la cámara lee tu placa automáticamente y registra tu entrada en el sistema.</p>
+                <div class="team-card">
+                    <div class="team-avatar">DA</div>
+                    <div class="team-info">
+                        <div class="team-name">Daniel Enrique<br>Arias Montero</div>
+                        <div class="team-role">Backend · Datos</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="d-flex mb-4">
-                <div class="me-3"><i class="fas fa-parking fs-3 text-success"></i></div>
-                <div>
-                    <h6 class="fw-bold text-white mb-1">2. Estacionamiento</h6>
-                    <p class="small text-secondary mb-0">El mapa se actualiza en tiempo real. Puedes consultar la disponibilidad de espacios desde esta pantalla.</p>
-                </div>
-            </div>
-
-            <div class="d-flex mb-4">
-                <div class="me-3"><i class="fas fa-camera fs-3 text-warning"></i></div>
-                <div>
-                    <h6 class="fw-bold text-white mb-1">3. Salida automática</h6>
-                    <p class="small text-secondary mb-0">Al salir, la cámara vuelve a leer tu placa, verifica tu registro y autoriza la salida automáticamente.</p>
-                </div>
-            </div>
-
-            <div class="d-flex">
-                <div class="me-3"><i class="fas fa-door-open fs-3 text-success"></i></div>
-                <div>
-                    <h6 class="fw-bold text-white mb-1">4. Sin filas, sin papeles</h6>
-                    <p class="small text-secondary mb-0">Todo el proceso es sin contacto. El sistema calcula tu tarifa y registra la duración automáticamente.</p>
-                </div>
-            </div>
-            
-            <div class="mt-5 text-center">
-                <button class="btn btn-outline-info btn-sm rounded-pill px-4" data-bs-dismiss="offcanvas">Entendido</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal ¿Quiénes Somos? -->
-    <div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content glass-card p-4" style="background: #020617; border: 2px solid var(--neon-cyan); border-radius: 25px;">
-                
-                <div class="modal-header border-0 pb-0 justify-content-center position-relative">
-                    <h4 class="text-white fw-bold mb-0" style="color: var(--neon-cyan) !important;">
-                        <i class="fas fa-microchip me-2"></i>Nuestra Misión
-                    </h4>
-                    <button type="button" class="btn-close btn-close-white position-absolute end-0" data-bs-dismiss="modal" style="top: 0;"></button>
-                </div>
-                
-                <div class="modal-body text-center pt-4">
-                    <p class="text-secondary small mb-4" style="text-align: justify; line-height: 1.6;">
-                        Transformamos la movilidad urbana mediante un <strong>Sistema de Estacionamiento Inteligente</strong> basado en arquitectura de Internet de las Cosas (IoT) y tecnología de sistemas embebidos. Nuestra solución optimiza el tiempo de búsqueda, reduce el impacto ambiental y democratiza el control operativo para modernizar la infraestructura actual.
-                    </p>
-                    
-                    <div class="border-top border-secondary pt-4 mt-2">
-                        <h6 class="text-white fw-bold mb-3" style="letter-spacing: 1px;">EQUIPO DESARROLLADOR</h6>
-                        <div class="d-flex flex-column gap-2 text-info small font-monospace">
-                            <span><i class="fas fa-user-astronaut me-2"></i>Camilo Andres Arenillas Pineda</span>
-                            <span><i class="fas fa-user-astronaut me-2"></i>Daniel Enrique Arias Montero</span>
-                            <span><i class="fas fa-user-astronaut me-2"></i>Cesar Stiven Hernandez Fuentes</span>
-                        </div>
-                        <p class="text-muted mt-4 mb-0" style="font-size: 0.65rem; letter-spacing: 1px;">UNIVERSIDAD NACIONAL DE COLOMBIA - SEDE LA PAZ (2026)</p>
+                <div class="team-card">
+                    <div class="team-avatar">CH</div>
+                    <div class="team-info">
+                        <div class="team-name">Cesar Stiven<br>Hernandez Fuentes</div>
+                        <div class="team-role">Frontend · Visión</div>
                     </div>
                 </div>
             </div>
+
+        </div><!-- /footer-body -->
+
+        <!-- Barra inferior -->
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <span class="footer-copy">© 2026 CAHPARK · UNIVERSIDAD NACIONAL DE COLOMBIA · SEDE LA PAZ</span>
+                <span class="footer-made">
+                    <i class="fas fa-satellite-dish"></i>
+                    Arenillas · Arias · Hernandez &nbsp;·&nbsp; TPI II · 2026
+                </span>
+            </div>
+        </div>
+
+    </footer>
+
+</div><!-- /content-layer -->
+
+<!-- MODAL QUIÉNES SOMOS -->
+<div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dark-modal">
+            <div class="modal-header dark-modal-header d-flex align-items-center justify-content-between">
+                <span class="modal-title-text">
+                    <!-- Mini logo inline en modal -->
+                    <svg width="18" height="18" viewBox="0 0 40 40" fill="none" style="margin-right:8px; vertical-align:middle;">
+                        <rect x="1" y="1" width="38" height="38" rx="9" stroke="#00f2fe" stroke-width="1.5" fill="rgba(0,242,254,0.08)"/>
+                        <path d="M27 11.5 A10 10 0 1 0 27 28.5" stroke="#00f2fe" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                        <circle cx="20" cy="20" r="2" fill="#00f2fe"/>
+                        <line x1="26" y1="20" x2="33" y2="20" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/>
+                        <polyline points="30.5,17.5 33,20 30.5,22.5" stroke="#00e5a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                    Sobre CAHPARK
+                </span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p style="font-size:0.88rem; color:#64748b; line-height:1.7; margin-bottom:1.5rem;">
+                    Transformamos la movilidad urbana mediante un sistema de estacionamiento inteligente basado en arquitectura IoT y tecnología de sistemas embebidos. Reducimos tiempos de búsqueda, costos operativos e impacto ambiental sin requerir obras civiles adicionales.
+                </p>
+
+                <p style="font-family:var(--font-display); font-size:0.62rem; letter-spacing:3px; color:#475569; text-transform:uppercase; margin-bottom:1rem;">
+                    Equipo desarrollador
+                </p>
+
+                <div class="team-member">
+                    <div class="member-avatar">CA</div>
+                    <div>
+                        <div class="member-name">Camilo Andres Arenillas Pineda</div>
+                        <div style="font-family:var(--font-display); font-size:0.58rem; letter-spacing:1.5px; color:#1e3a5f; text-transform:uppercase;">IoT · Hardware</div>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <div class="member-avatar">DA</div>
+                    <div>
+                        <div class="member-name">Daniel Enrique Arias Montero</div>
+                        <div style="font-family:var(--font-display); font-size:0.58rem; letter-spacing:1.5px; color:#1e3a5f; text-transform:uppercase;">Backend · Datos</div>
+                    </div>
+                </div>
+                <div class="team-member">
+                    <div class="member-avatar">CH</div>
+                    <div>
+                        <div class="member-name">Cesar Stiven Hernandez Fuentes</div>
+                        <div style="font-family:var(--font-display); font-size:0.58rem; letter-spacing:1.5px; color:#1e3a5f; text-transform:uppercase;">Frontend · Visión por Computadora</div>
+                    </div>
+                </div>
+
+                <p style="font-size:0.7rem; color:#1e293b; letter-spacing:1px; text-align:center; margin-top:1.5rem; font-family:var(--font-display);">
+                    UNIVERSIDAD NACIONAL DE COLOMBIA · SEDE LA PAZ · 2026
+                </p>
+            </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        async function updateFees() {
-            try {
-                const res = await fetch('/api/settings');
-                const s = await res.json();
-                document.getElementById('baseFeeDisplay').textContent = `$ ${s.baseFee.toLocaleString()}`;
-                document.getElementById('extraFeeDisplay').textContent = `$ ${s.additionalHourFee.toLocaleString()}`;
-                document.getElementById('maxFeeDisplay').textContent = `$ ${s.maxDailyFee.toLocaleString()}`;
-            } catch (e) {}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── PARTÍCULAS ──────────────────────────────────────────────
+(function() {
+    const canvas = document.getElementById('particles-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H, particles = [];
+    const TOTAL = 70;
+    const CONNECT_DIST = 130;
+
+    function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    function Particle() {
+        this.x  = Math.random() * W;
+        this.y  = Math.random() * H;
+        this.vx = (Math.random() - 0.5) * 0.35;
+        this.vy = (Math.random() - 0.5) * 0.35;
+        this.r  = Math.random() * 1.5 + 0.5;
+    }
+
+    Particle.prototype.update = function() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > W) this.vx *= -1;
+        if (this.y < 0 || this.y > H) this.vy *= -1;
+    };
+
+    function init() {
+        resize();
+        particles = Array.from({ length: TOTAL }, () => new Particle());
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.update();
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,242,254,0.35)';
+            ctx.fill();
+            for (let j = i + 1; j < particles.length; j++) {
+                const q = particles[j];
+                const dx = p.x - q.x, dy = p.y - q.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < CONNECT_DIST) {
+                    const alpha = (1 - dist / CONNECT_DIST) * 0.12;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(q.x, q.y);
+                    ctx.strokeStyle = `rgba(0,242,254,${alpha})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    init();
+    draw();
+})();
+
+// ── SPOTS GRID ───────────────────────────────────────────────
+const spotsGrid = document.getElementById('spotsGrid');
+for (let i = 1; i <= 8; i++) {
+    const col = document.createElement('div');
+    col.innerHTML = `
+        <div class="spot-card" data-spot="${i}" style="animation-delay:${i * 0.07}s">
+            <div class="spot-number">P1 — ${i}</div>
+            <div class="spot-icon-wrap">
+                <i class="fas fa-car spot-icon"></i>
+            </div>
+            <span class="spot-badge loading">—</span>
+        </div>`;
+    spotsGrid.appendChild(col);
+}
+
+// ── SWITCH NIVEL ─────────────────────────────────────────────
+function switchLevel(n) {
+    document.getElementById('piso1').style.display = n === 1 ? '' : 'none';
+    document.getElementById('piso2').style.display = n === 2 ? '' : 'none';
+    document.getElementById('tab-p1').classList.toggle('active', n === 1);
+    document.getElementById('tab-p2').classList.toggle('active', n === 2);
+}
+
+// ── CONTADOR ANIMADO ─────────────────────────────────────────
+function animateCount(el, target, prefix = '$', duration = 800) {
+    const start = performance.now();
+    function step(now) {
+        const t   = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const val  = Math.round(target * ease);
+        el.textContent = `${prefix} ${val.toLocaleString('es-CO')}`;
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// Stat chips: animar números al cargar
+function animateStatChip(elId, target, suffix = '') {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const start = performance.now();
+    const duration = 1000;
+    function step(now) {
+        const t    = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const val  = Math.round(target * ease);
+        el.textContent = val + suffix;
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    animateStatChip('statSpots',   8);
+    animateStatChip('statSensors', 8);
+});
+
+let feesLoaded = false;
+async function updateFees() {
+    try {
+        const res = await fetch('/api/settings');
+        const s   = await res.json();
+        if (!feesLoaded) {
+            feesLoaded = true;
+            animateCount(document.getElementById('baseFeeDisplay'),  s.baseFee);
+            animateCount(document.getElementById('extraFeeDisplay'), s.additionalHourFee);
+            animateCount(document.getElementById('maxFeeDisplay'),   s.maxDailyFee);
+        } else {
+            document.getElementById('baseFeeDisplay').textContent  = `$ ${s.baseFee.toLocaleString('es-CO')}`;
+            document.getElementById('extraFeeDisplay').textContent = `$ ${s.additionalHourFee.toLocaleString('es-CO')}`;
+            document.getElementById('maxFeeDisplay').textContent   = `$ ${s.maxDailyFee.toLocaleString('es-CO')}`;
+        }
+    } catch (e) {}
+}
+
+// ── ACTUALIZACIÓN DE ESTADO ──────────────────────────────────
+let lastUpdate = null;
+
+function updateLastUpdateText() {
+    if (!lastUpdate) return;
+    const secs = Math.round((Date.now() - lastUpdate) / 1000);
+    const el   = document.getElementById('lastUpdateText');
+    if (secs < 5)       el.textContent = 'hace un momento';
+    else if (secs < 60) el.textContent = `hace ${secs}s`;
+    else                el.textContent = 'hace más de 1 min';
+}
+
+async function updateStatus() {
+    try {
+        const res = await fetch('/api/parking-status');
+        const d   = await res.json();
+        if (!d.data) return;
+
+        lastUpdate = Date.now();
+        let occupied = 0;
+
+        d.data.forEach(spot => {
+            const card  = document.querySelector(`.spot-card[data-spot="${spot.id}"]`);
+            if (!card) return;
+            const badge = card.querySelector('.spot-badge');
+            const icon  = card.querySelector('.spot-icon');
+
+            if (spot.is_occupied) {
+                occupied++;
+                card.className  = 'spot-card ocupado';
+                badge.className = 'spot-badge ocupado';
+                badge.textContent = 'OCUPADO';
+                icon.className  = 'fas fa-car-side spot-icon';
+            } else {
+                card.className  = 'spot-card libre';
+                badge.className = 'spot-badge libre';
+                badge.textContent = 'LIBRE';
+                icon.className  = 'fas fa-car spot-icon';
+            }
+        });
+
+        const total = d.data.length;
+        const avail = total - occupied;
+        const pct   = Math.round((occupied / total) * 100);
+
+        // Badge principal
+        const sb = document.getElementById('smartBadge');
+        if (avail === 0) {
+            sb.innerHTML = '<i class="fas fa-ban me-2"></i> LLENO';
+            sb.className = 'status-badge lleno';
+        } else {
+            sb.innerHTML = `<i class="fas fa-check-circle me-2"></i> ${avail} DISPONIBLE${avail !== 1 ? 'S' : ''}`;
+            sb.className = 'status-badge';
         }
 
-        async function updateStatus() {
-            try {
-                const res = await fetch('/api/parking-status');
-                const d = await res.json();
-                if (!d.data) return;
+        // Barra de ocupación
+        document.getElementById('occupancyText').textContent = `${occupied} de ${total} espacios ocupados`;
+        document.getElementById('occupancyPct').textContent  = `${pct}%`;
+        const fill = document.getElementById('occupancyFill');
+        fill.style.width = `${pct}%`;
+        fill.classList.toggle('high', pct >= 75);
 
-                let occupied = 0;
-                d.data.forEach(spot => {
-                    const el = document.querySelector(`.futuristic-spot[data-spot="${spot.id}"]`);
-                    if (el) {
-                        const badge = el.querySelector('.badge-status');
-                        const icon = el.querySelector('.spot-icon');
-                        
-                        if (spot.is_occupied) {
-                            occupied++;
-                            el.className = 'futuristic-spot spot-occupied-anim';
-                            badge.textContent = 'OCUPADO';
-                            badge.className = 'badge badge-status bg-danger';
-                            icon.className = 'fas fa-car-side fa-2x mb-2 glow-text-red';
-                        } else {
-                            el.className = 'futuristic-spot spot-free-anim';
-                            badge.textContent = 'LIBRE';
-                            badge.className = 'badge badge-status bg-success';
-                            icon.className = 'fas fa-car fa-2x mb-2 glow-text-green';
-                        }
-                    }
-                });
+    } catch (e) {}
+}
 
-                const avail = d.data.length - occupied;
-                const sb = document.getElementById('smartBadge');
-                sb.innerHTML = avail === 0 
-                    ? `<i class="fas fa-ban me-2"></i> LLENO` 
-                    : `<i class="fas fa-check-circle me-2"></i> DISPONIBLES: ${avail}`;
-                sb.style.color = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
-                sb.style.borderColor = avail === 0 ? 'var(--neon-red)' : 'var(--neon-cyan)';
-            } catch (e) {}
-        }
+// ── RELOJ DE ACTUALIZACIÓN ───────────────────────────────────
+setInterval(updateLastUpdateText, 1000);
 
-        updateFees();
-        updateStatus();
-        setInterval(updateStatus, 2500); 
-        setInterval(updateFees, 30000);
-    </script>
+// ── INIT ─────────────────────────────────────────────────────
+updateFees();
+updateStatus();
+setInterval(updateStatus, 2500);
+setInterval(updateFees,   30000);
+</script>
 </body>
 </html>
