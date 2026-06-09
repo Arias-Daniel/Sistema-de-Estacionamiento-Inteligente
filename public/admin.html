@@ -29,6 +29,9 @@
                         <a class="nav-link" href="#" id="nav-historial"><i class="fas fa-history me-1"></i> Historial</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="#" id="nav-coincidencias"><i class="fas fa-link me-1"></i> Coincidencias</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#" id="nav-configuracion"><i class="fas fa-cog me-1"></i> Configuración</a>
                     </li>
                     <li class="nav-item ms-lg-3">
@@ -41,6 +44,7 @@
 
     <div class="container mt-4">
         
+        <!-- VISTA INICIO -->
         <div id="vista-inicio">
             <div class="row mb-4">
                 <div class="col-md-3">
@@ -198,6 +202,7 @@
             </div>
         </div>
 
+        <!-- VISTA HISTORIAL -->
         <div id="vista-historial" class="d-none">
             <div class="row">
                 <div class="col-12">
@@ -235,6 +240,55 @@
             </div>
         </div>
 
+        <!-- VISTA COINCIDENCIAS -->
+        <div id="vista-coincidencias" class="d-none">
+            <div class="row">
+                <!-- Placas esperando plaza -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="fas fa-car me-2"></i> Placas en espera de plaza
+                            <span class="badge bg-dark ms-2" id="badge-espera">0</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Placa</th>
+                                        <th>Vista a las</th>
+                                        <th>Hace</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-espera"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Plazas ocupadas sin placa confirmada -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-danger text-white">
+                            <i class="fas fa-parking me-2"></i> Plazas sin placa confirmada
+                            <span class="badge bg-light text-dark ms-2" id="badge-plazas">0</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Plaza</th>
+                                        <th>Ocupada a las</th>
+                                        <th>Placa asignada</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-plazas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA CONFIGURACIÓN -->
         <div id="vista-configuracion" class="d-none">
             <div class="row">
                 <div class="col-md-6 mb-4">
@@ -317,8 +371,10 @@
                 </div>
             </div>
         </div>
+
     </div>
 
+    <!-- MODAL FILTRO -->
     <div class="modal fade" id="filterModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

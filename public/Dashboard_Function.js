@@ -270,27 +270,37 @@ document.getElementById('exportBtn').addEventListener('click', (e) => {
 // NAVEGACIÓN SPA Y LÓGICA DE CONFIGURACIÓN
 // ==========================================
 
-const navInicio = document.getElementById('nav-inicio');
-const navHistorial = document.getElementById('nav-historial');
-const navConfiguracion = document.getElementById('nav-configuracion');
+const navInicio          = document.getElementById('nav-inicio');
+const navHistorial       = document.getElementById('nav-historial');
+const navCoincidencias   = document.getElementById('nav-coincidencias');
+const navConfiguracion   = document.getElementById('nav-configuracion');
 
-const vistaInicio = document.getElementById('vista-inicio');
-const vistaHistorial = document.getElementById('vista-historial');
-const vistaConfiguracion = document.getElementById('vista-configuracion');
+const vistaInicio          = document.getElementById('vista-inicio');
+const vistaHistorial       = document.getElementById('vista-historial');
+const vistaCoincidencias   = document.getElementById('vista-coincidencias');
+const vistaConfiguracion   = document.getElementById('vista-configuracion');
 
+// Oculta todas las vistas y desactiva todos los nav-links,
+// luego muestra solo la vista/nav indicados.
 function cambiarVista(vistaActiva, navActivo) {
-    vistaInicio.classList.add('d-none');
-    vistaHistorial.classList.add('d-none');
-    vistaConfiguracion.classList.add('d-none');
-    navInicio.classList.remove('active');
-    navHistorial.classList.remove('active');
-    navConfiguracion.classList.remove('active');
+    [vistaInicio, vistaHistorial, vistaCoincidencias, vistaConfiguracion]
+        .forEach(v => v.classList.add('d-none'));
+    [navInicio, navHistorial, navCoincidencias, navConfiguracion]
+        .forEach(n => n.classList.remove('active'));
+
     vistaActiva.classList.remove('d-none');
     navActivo.classList.add('active');
 }
 
-navInicio.addEventListener('click', (e) => { e.preventDefault(); cambiarVista(vistaInicio, navInicio); });
-navHistorial.addEventListener('click', (e) => { e.preventDefault(); cambiarVista(vistaHistorial, navHistorial); });
+navInicio.addEventListener('click', (e) => {
+    e.preventDefault();
+    cambiarVista(vistaInicio, navInicio);
+});
+
+navHistorial.addEventListener('click', (e) => {
+    e.preventDefault();
+    cambiarVista(vistaHistorial, navHistorial);
+});
 
 // EVENTO: Al hacer clic en Configuración, cargar datos del servidor
 navConfiguracion.addEventListener('click', async (e) => { 
@@ -362,4 +372,83 @@ async function actualizarConfigGral() {
     } catch (error) {
         alert("Error al actualizar.");
     }
+}
+
+// ==========================================
+// VISTA COINCIDENCIAS
+// ==========================================
+
+navCoincidencias.addEventListener('click', async (e) => {
+    e.preventDefault();
+    cambiarVista(vistaCoincidencias, navCoincidencias);
+    await cargarCoincidencias();
+});
+
+// Recargar cada 5 segundos si la vista está activa
+setInterval(async () => {
+    if (!vistaCoincidencias.classList.contains('d-none')) {
+        await cargarCoincidencias();
+    }
+}, 5000);
+
+async function cargarCoincidencias() {
+    try {
+        const res  = await fetch(`${API_URL}/matches`);
+        const data = await res.json();
+
+        // ── Tabla de placas en espera ────────────────────────────────
+        const tbEspera = document.getElementById('tabla-espera');
+        const espera   = data.unmatched_plates || [];
+        document.getElementById('badge-espera').textContent = espera.length;
+
+        if (espera.length === 0) {
+            tbEspera.innerHTML = '<tr><td colspan="3" class="text-center text-muted p-3">Sin placas en espera</td></tr>';
+        } else {
+            tbEspera.innerHTML = espera.map(p => {
+                const hace   = tiempoTranscurrido(p.seen_at);
+                const alerta = minutosDesde(p.seen_at) > 5 ? 'table-warning' : '';
+                return `<tr class="${alerta}">
+                    <td><strong>${p.license_plate}</strong></td>
+                    <td>${new Date(p.seen_at).toLocaleTimeString('es-CO')}</td>
+                    <td><span class="badge bg-secondary">${hace}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ── Tabla de plazas sin confirmar ────────────────────────────
+        const tbPlazas = document.getElementById('tabla-plazas');
+        const sinPlaca = (data.spot_events || []).filter(e => !e.license_plate);
+        const conPlaca = (data.spot_events || []).filter(e =>  e.license_plate);
+        document.getElementById('badge-plazas').textContent = sinPlaca.length;
+
+        const todosEventos = [...sinPlaca, ...conPlaca].slice(0, 10);
+
+        if (todosEventos.length === 0) {
+            tbPlazas.innerHTML = '<tr><td colspan="3" class="text-center text-muted p-3">Sin eventos recientes</td></tr>';
+        } else {
+            tbPlazas.innerHTML = todosEventos.map(ev => {
+                const placa = ev.license_plate
+                    ? `<span class="badge bg-success">${ev.license_plate}</span>`
+                    : `<span class="badge bg-danger">Sin asignar</span>`;
+                return `<tr>
+                    <td><strong>Plaza ${ev.spot_id}</strong></td>
+                    <td>${new Date(ev.occupied_at).toLocaleTimeString('es-CO')}</td>
+                    <td>${placa}</td>
+                </tr>`;
+            }).join('');
+        }
+    } catch (err) {
+        console.error('Error cargando coincidencias:', err);
+    }
+}
+
+function tiempoTranscurrido(isoString) {
+    const secs = Math.floor((Date.now() - new Date(isoString)) / 1000);
+    if (secs < 60)   return `${secs}s`;
+    if (secs < 3600) return `${Math.floor(secs / 60)}min`;
+    return `${Math.floor(secs / 3600)}h`;
+}
+
+function minutosDesde(isoString) {
+    return (Date.now() - new Date(isoString)) / 60000;
 }
