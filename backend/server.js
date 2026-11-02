@@ -109,7 +109,7 @@ app.post("/api/entry", async (req, res) => {
     }
 });
 
-// 4. Registrar SALIDA
+// 4. Registrar SALIDA (Soporta salidas con o sin placa asociada)
 app.post("/api/exit", async (req, res) => {
     const { spot_id } = req.body;
     const exit_time = new Date().toISOString();
@@ -134,20 +134,27 @@ app.post("/api/exit", async (req, res) => {
 
         if (updateSpotError) throw updateSpotError;
 
-        const { error: updateRecordError } = await supabase
-            .from('parking_records')
-            .update({
-                exit_time: exit_time,
-                duration_minutes: duration,
-                fee: fee,
-                status: 'Completado'
-            })
-            .eq('license_plate', spots.license_plate)
-            .eq('status', 'En estacionamiento');
+        if (spots.license_plate) {
+            const { error: updateRecordError } = await supabase
+                .from('parking_records')
+                .update({
+                    exit_time: exit_time,
+                    duration_minutes: duration,
+                    fee: fee,
+                    status: 'Completado'
+                })
+                .eq('license_plate', spots.license_plate)
+                .eq('status', 'En estacionamiento');
 
-        if (updateRecordError) throw updateRecordError;
+            if (updateRecordError) throw updateRecordError;
+        }
 
-        res.json({ message: "Salida registrada con éxito", license_plate: spots.license_plate, fee, duration });
+        res.json({
+            message: "Salida registrada con éxito",
+            license_plate: spots.license_plate || "Sin placa",
+            fee,
+            duration
+        });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
