@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link href="Dashboard_Design.css" rel="stylesheet">
 </head>
 <body>
@@ -32,7 +31,7 @@
                         <a class="nav-link" href="#" id="nav-coincidencias"><i class="fas fa-link me-1"></i> Coincidencias</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" id="nav-configuracion"><i class="fas fa-cog me-1"></i> Configuración</a>
+                        <a class="nav-link" href="#" id="nav-configuracion"><i class="fas fa-cog me-1"></i> Configuracion</a>
                     </li>
                     <li class="nav-item ms-lg-3">
                         <button class="btn btn-outline-danger btn-sm mt-1" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
@@ -165,7 +164,7 @@
                     
                     <div class="card mt-4">
                         <div class="card-header">
-                            <i class="fas fa-chart-line me-2"></i> Ocupación en Tiempo Real
+                            <i class="fas fa-chart-line me-2"></i> Ocupacion en Tiempo Real
                         </div>
                         <div class="card-body">
                             <canvas id="occupancyChart" height="100"></canvas>
@@ -189,7 +188,7 @@
                     
                     <div class="card mt-4">
                         <div class="card-header">
-                            <i class="fas fa-car me-2"></i> Detalles del Vehículo Seleccionado
+                            <i class="fas fa-car me-2"></i> Detalles del Vehiculo Seleccionado
                         </div>
                         <div class="card-body">
                             <div id="vehicleDetails" class="text-center text-muted">
@@ -226,7 +225,7 @@
                                             <th>Placa</th>
                                             <th>Hora de Entrada</th>
                                             <th>Hora de Salida</th>
-                                            <th>Duración</th>
+                                            <th>Duracion</th>
                                             <th>Tarifa</th>
                                             <th>Estado</th>
                                         </tr>
@@ -242,45 +241,117 @@
 
         <!-- VISTA COINCIDENCIAS -->
         <div id="vista-coincidencias" class="d-none">
+            <!-- Barra de control: Asignacion manual y limpieza -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="fw-bold text-secondary me-1">
+                            <i class="fas fa-plus-circle me-1 text-primary"></i> Asignar placa manualmente:
+                        </span>
+                        <input type="text" id="manualPlateInput" class="form-control form-control-sm text-uppercase" style="width: 135px;" maxlength="6" placeholder="Ej: ABC123">
+                        <select id="manualSpotSelect" class="form-select form-select-sm" style="width: 115px;">
+                            <option value="1">Plaza 1</option>
+                            <option value="2">Plaza 2</option>
+                            <option value="3">Plaza 3</option>
+                            <option value="4">Plaza 4</option>
+                            <option value="5">Plaza 5</option>
+                            <option value="6">Plaza 6</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary" onclick="asignarPlacaManual()">
+                            <i class="fas fa-check me-1"></i> Asignar
+                        </button>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-outline-warning text-dark" onclick="limpiarDatosCoincidencias('waiting')">
+                            <i class="fas fa-broom me-1"></i> Limpiar placas en espera
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="limpiarDatosCoincidencias('all')">
+                            <i class="fas fa-trash-alt me-1"></i> Limpiar todo el panel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
-                <!-- Placas esperando plaza -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-warning text-dark">
-                            <i class="fas fa-car me-2"></i> Placas en espera de plaza
-                            <span class="badge bg-dark ms-2" id="badge-espera">0</span>
+                <!-- Columna Izquierda: Placas en espera de plaza -->
+                <div class="col-lg-5 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-car me-2"></i> Placas en espera de plaza
+                            </span>
+                            <span class="badge bg-dark" id="badge-espera">0</span>
                         </div>
                         <div class="card-body p-0">
-                            <table class="table table-sm mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Placa</th>
-                                        <th>Vista a las</th>
-                                        <th>Hace</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabla-espera"></tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-3">Placa</th>
+                                            <th>Vista a las</th>
+                                            <th class="pe-3 text-end">Asignar a</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-espera"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- Plazas ocupadas sin placa confirmada -->
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-danger text-white">
-                            <i class="fas fa-parking me-2"></i> Plazas sin placa confirmada
-                            <span class="badge bg-light text-dark ms-2" id="badge-plazas">0</span>
+
+                <!-- Columna Derecha: Las 6 plazas fijas -->
+                <div class="col-lg-7 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-parking me-2"></i> Estado y Control de las 6 Plazas
+                            </span>
+                            <span class="badge bg-secondary" id="badge-plazas">0 / 6 ocupadas</span>
                         </div>
                         <div class="card-body p-0">
-                            <table class="table table-sm mb-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-3">Plaza</th>
+                                            <th>Estado</th>
+                                            <th>Placa Actual</th>
+                                            <th>Editar / Asignar</th>
+                                            <th class="pe-3">Mover / Intercambiar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-plazas"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desplegable discreto abajo: Historial de placas y eventos por plaza -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body py-2 px-3 bg-white rounded border d-flex justify-content-between align-items-center">
+                    <button class="btn btn-sm btn-link text-decoration-none text-secondary fw-semibold p-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHistorialPlazas" aria-expanded="false">
+                        <i class="fas fa-chevron-down me-2"></i> Ver historial de eventos de sensores por plaza
+                        <span class="badge bg-secondary ms-2" id="badge-historial-eventos">0</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary py-0" onclick="limpiarDatosCoincidencias('events')">
+                        <i class="fas fa-eraser me-1"></i> Limpiar historial de eventos
+                    </button>
+                </div>
+                <div class="collapse mt-2" id="collapseHistorialPlazas">
+                    <div class="card card-body p-0 border shadow-sm">
+                        <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-sm table-striped mb-0 small align-middle">
                                 <thead>
                                     <tr>
-                                        <th>Plaza</th>
+                                        <th class="ps-3">Plaza</th>
                                         <th>Ocupada a las</th>
-                                        <th>Placa asignada</th>
+                                        <th>Placa vinculada en el evento</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tabla-plazas"></tbody>
+                                <tbody id="tabla-historial-eventos"></tbody>
                             </table>
                         </div>
                     </div>
@@ -288,13 +359,13 @@
             </div>
         </div>
 
-        <!-- VISTA CONFIGURACIÓN -->
+        <!-- VISTA CONFIGURACION -->
         <div id="vista-configuracion" class="d-none">
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <div class="card shadow-sm h-100">
                         <div class="card-header bg-primary text-white">
-                            <i class="fas fa-money-bill-wave me-2"></i> Gestión de Tarifas
+                            <i class="fas fa-money-bill-wave me-2"></i> Gestion de Tarifas
                         </div>
                         <div class="card-body">
                             <form id="feesForm">
@@ -313,7 +384,7 @@
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Máximo Diario</label>
+                                    <label class="form-label small fw-bold">Maximo Diario</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
                                         <input type="number" id="inputMaxFee" class="form-control" required>
@@ -330,10 +401,10 @@
                 <div class="col-md-6 mb-4">
                     <div class="card shadow-sm h-100">
                         <div class="card-header bg-dark text-white">
-                            <i class="fas fa-calculator me-2"></i> Simulador de Cobro Rápido
+                            <i class="fas fa-calculator me-2"></i> Simulador de Cobro Rapido
                         </div>
                         <div class="card-body">
-                            <p class="text-muted small">Calcula cuánto debería pagar un cliente según el tiempo de estancia.</p>
+                            <p class="text-muted small">Calcula cuanto deberia pagar un cliente segun el tiempo de estancia.</p>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold">Minutos de Estancia</label>
                                 <input type="number" id="simMinutes" class="form-control" placeholder="Ej: 120">
@@ -352,7 +423,7 @@
                 <div class="col-12">
                     <div class="card shadow-sm">
                         <div class="card-header bg-secondary text-white">
-                            <i class="fas fa-cogs me-2"></i> Parámetros del Sistema
+                            <i class="fas fa-cogs me-2"></i> Parametros del Sistema
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -407,10 +478,10 @@
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <h5><i class="fas fa-parking me-2"></i> Estacionamiento Inteligente</h5>
-                    <p class="text-white-50">Reconocimiento automático de placas mediante visión artificial para una gestión mecatrónica eficiente.</p>
+                    <p class="text-white-50">Reconocimiento automatico de placas mediante vision artificial para una gestion mecatronica eficiente.</p>
                 </div>
                 <div class="col-md-6">
-                    <h5>Créditos del Proyecto</h5>
+                    <h5>Creditos del Proyecto</h5>
                     <ul class="list-unstyled">
                         <li><strong>Desarrolladores:</strong> C. Arenillas, D. Arias, C. Hernandez.</li>
                         <li class="mt-2"><strong>Docente:</strong> Sebastian Robledo Giraldo</li>
