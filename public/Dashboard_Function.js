@@ -13,6 +13,7 @@ function logout() {
 let currentStartDate = null;
 let currentEndDate = null;
 let occupancyChartInstance;
+const photoCache = {};
 
 const API_URL = '/api';
 
@@ -25,9 +26,26 @@ document.addEventListener('DOMContentLoaded', function() {
 async function updateDashboard() {
     await updateParkingSpots();
     await updateStats();
-    await updateRecordsTable(currentStartDate, currentEndDate);
+
+    // No colapsar las fotos desplegadas en Historial si el usuario las esta viendo
+    const openHistoryPhoto = document.querySelector('#vista-historial .collapse.show');
+    if (!openHistoryPhoto) {
+        await updateRecordsTable(currentStartDate, currentEndDate);
+    }
+
     await updateChartData();
     await updateRecentActivity();
+}
+
+// Funcion para abrir el modal de zoom de la fotografia
+function verFotoModal(cacheKey, plate, timeLabel) {
+    const imgSrc = photoCache[cacheKey];
+    if (!imgSrc) return;
+    document.getElementById('modalPlateText').textContent = plate || 'SIN PLACA';
+    document.getElementById('modalPlateImg').src = imgSrc;
+    document.getElementById('modalPlateTime').textContent = timeLabel ? `Capturada: ${timeLabel}` : '';
+    const modal = new bootstrap.Modal(document.getElementById('platePhotoModal'));
+    modal.show();
 }
 
 // 1. Actualizar el mapa de estacionamiento
@@ -72,7 +90,7 @@ async function updateStats() {
     }
 }
 
-// 3. Actualizar la tabla de registros
+// 3. Actualizar la tabla de registros (Historial con foto desplegable)
 async function updateRecordsTable(startDate, endDate) {
     try {
         let url = `${API_URL}/records`;
@@ -88,7 +106,7 @@ async function updateRecordsTable(startDate, endDate) {
         tbody.innerHTML = ''; 
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron registros.</td></tr>';
             return;
         }
 
@@ -101,15 +119,49 @@ async function updateRecordsTable(startDate, endDate) {
                 ? '<span class="badge bg-success">En estacionamiento</span>' 
                 : '<span class="badge bg-danger">Completado</span>';
 
+            const cacheKey = `rec_${record.id}`;
+            let btnFoto = '<span class="text-muted small">Sin captura</span>';
+            let filaDesplegable = '';
+
+            if (record.plate_image) {
+                photoCache[cacheKey] = record.plate_image;
+                btnFoto = `
+                    <button class="btn btn-sm btn-outline-info btn-photo-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-rec-${record.id}">
+                        <i class="fas fa-camera me-1"></i> Desplegar foto
+                    </button>
+                `;
+                filaDesplegable = `
+                    <tr class="collapse" id="collapse-rec-${record.id}">
+                        <td colspan="7" class="p-2 bg-light">
+                            <div class="plate-capture-box d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="${record.plate_image}" alt="Placa ${record.license_plate}" class="plate-capture-img" onclick="verFotoModal('${cacheKey}', '${record.license_plate}', '${entryTime}')">
+                                    <div>
+                                        <div class="small text-info text-uppercase fw-bold">Captura guardada en Historial (>= 95% OCR)</div>
+                                        <div class="fs-5 fw-bold text-white">${record.license_plate}</div>
+                                        <div class="small text-white-50">Hora de entrada: ${entryTime} (Haz clic en la imagen para ampliar)</div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-light" onclick="verFotoModal('${cacheKey}', '${record.license_plate}', '${entryTime}')">
+                                    <i class="fas fa-search-plus me-1"></i> Ampliar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+
             const row = `
                 <tr>
-                    <td>${record.license_plate}</td>
+                    <td><strong>${record.license_plate}</strong></td>
+                    <td>${btnFoto}</td>
                     <td>${entryTime}</td>
                     <td>${exitTime}</td>
                     <td>${duration}</td>
                     <td>${fee}</td>
                     <td>${statusBadge}</td>
                 </tr>
+                ${filaDesplegable}
             `;
             tbody.innerHTML += row;
         });
@@ -168,7 +220,7 @@ async function updateRecentActivity() {
     }
 }
 
-// Manejar clic en espacios de estacionamiento
+// Manejar clic en espacios de estacionamiento (incluye vista de foto si tiene)
 document.querySelectorAll('.parking-spot').forEach(spot => {
     spot.addEventListener('click', async function () {
         const spotId = this.getAttribute('data-spot');
@@ -181,6 +233,9 @@ document.querySelectorAll('.parking-spot').forEach(spot => {
             const entry = new Date(spotData.entry_time);
             const now = new Date();
             const durationMinutes = Math.max(0, Math.floor((now - entry) / (1000 * 60)));
+            const fotoHtml = spotData.plate_image
+                ? `<div class="mt-3"><img src="${spotData.plate_image}" alt="Placa" class="img-fluid rounded border border-success" style="max-height: 90px;"></div>`
+                : '';
             
             vehicleDetails.innerHTML = `
                 <h5>Espacio ${spotData.id}</h5>
@@ -188,6 +243,7 @@ document.querySelectorAll('.parking-spot').forEach(spot => {
                 <p class="mb-2"><strong>Placa:</strong> ${spotData.license_plate || 'Sin placa'}</p>
                 <p class="mb-2"><strong>Hora de Entrada:</strong> ${entry.toLocaleTimeString('es-CO')}</p>
                 <p class="mb-0"><strong>Tiempo estacionado:</strong> ${durationMinutes} minutos</p>
+                ${fotoHtml}
             `;
         } else {
             vehicleDetails.innerHTML = `
@@ -365,7 +421,7 @@ async function actualizarConfigGral() {
 }
 
 // ==========================================
-// VISTA COINCIDENCIAS (AUTOMATICA Y MANUAL)
+// VISTA COINCIDENCIAS (FOTOS DESPLEGABLES + CONTROL 6 PLAZAS)
 // ==========================================
 
 navCoincidencias.addEventListener('click', async (e) => {
@@ -374,11 +430,12 @@ navCoincidencias.addEventListener('click', async (e) => {
     await cargarCoincidencias();
 });
 
-// Recargar cada 5 segundos solo si la vista esta activa y el admin no esta editando un campo
+// Recargar cada 5 segundos solo si la vista esta activa y el admin no tiene una foto desplegada ni esta editando
 setInterval(async () => {
     const activeEl = document.activeElement;
     const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT');
-    if (!vistaCoincidencias.classList.contains('d-none') && !isEditing) {
+    const openPhoto = document.querySelector('#tabla-espera .collapse.show, #tabla-plazas .collapse.show, #tabla-historial-eventos .collapse.show');
+    if (!vistaCoincidencias.classList.contains('d-none') && !isEditing && !openPhoto) {
         await cargarCoincidencias();
     }
 }, 5000);
@@ -392,7 +449,7 @@ async function cargarCoincidencias() {
         const dataMatches = await resMatches.json();
         const dataSpots   = await resSpots.json();
 
-        // 1. Tabla izquierda: Placas en espera de plaza
+        // 1. Tabla izquierda: Placas en espera de plaza + boton para desplegar su foto
         const tbEspera = document.getElementById('tabla-espera');
         const espera   = dataMatches.unmatched_plates || [];
         document.getElementById('badge-espera').textContent = espera.length;
@@ -404,8 +461,42 @@ async function cargarCoincidencias() {
                 const hace   = tiempoTranscurrido(p.seen_at);
                 const alerta = minutosDesde(p.seen_at) > 5 ? 'table-warning' : '';
                 const hora   = new Date(p.seen_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const cacheKey = `wait_${p.id}`;
+
+                let botonFoto = '<span class="badge bg-light text-secondary border ms-1">Sin foto</span>';
+                let filaFotoDesplegable = '';
+
+                if (p.plate_image) {
+                    photoCache[cacheKey] = p.plate_image;
+                    botonFoto = `
+                        <button class="btn btn-sm btn-dark btn-photo-toggle ms-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-wait-${p.id}" title="Desplegar fotografia de la placa">
+                            <i class="fas fa-camera text-info me-1"></i> Ver foto
+                        </button>
+                    `;
+                    filaFotoDesplegable = `
+                        <tr class="collapse" id="collapse-wait-${p.id}">
+                            <td colspan="3" class="p-2">
+                                <div class="plate-capture-box text-center">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small text-info fw-bold"><i class="fas fa-check-circle me-1"></i> Captura al >= 95% de confianza</span>
+                                        <button class="btn btn-sm btn-outline-info py-0 px-2" onclick="verFotoModal('${cacheKey}', '${p.license_plate}', '${hora}')">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
+                                    </div>
+                                    <img src="${p.plate_image}" alt="Placa ${p.license_plate}" class="plate-capture-img" onclick="verFotoModal('${cacheKey}', '${p.license_plate}', '${hora}')">
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
                 return `<tr class="${alerta}">
-                    <td class="ps-3"><strong>${p.license_plate}</strong></td>
+                    <td class="ps-3">
+                        <div class="d-flex align-items-center flex-wrap gap-1">
+                            <strong class="fs-6">${p.license_plate}</strong>
+                            ${botonFoto}
+                        </div>
+                    </td>
                     <td>
                         <div class="small">${hora}</div>
                         <span class="badge bg-secondary">${hace}</span>
@@ -428,11 +519,12 @@ async function cargarCoincidencias() {
                             </button>
                         </div>
                     </td>
-                </tr>`;
+                </tr>
+                ${filaFotoDesplegable}`;
             }).join('');
         }
 
-        // 2. Tabla derecha: Mostrar unicamente las 6 plazas fijas (Plazas 1 a 6)
+        // 2. Tabla derecha: Las 6 plazas fijas (Plazas 1 a 6) + opcion de ver la foto asignada
         const tbPlazas = document.getElementById('tabla-plazas');
         const plazas6  = (dataSpots.data || []).filter(s => s.id >= 1 && s.id <= 6);
         const ocupadasCount = plazas6.filter(s => s.is_occupied).length;
@@ -447,9 +539,40 @@ async function cargarCoincidencias() {
                 ? `<span class="badge bg-danger">Ocupada</span><div class="text-muted" style="font-size: 0.72rem;">${horaEntrada}</div>`
                 : `<span class="badge bg-success">Libre</span>`;
 
+            const cacheKeySpot = `spot_${spot.id}`;
+            let btnFotoSpot = '';
+            let filaFotoSpot = '';
+
+            if (spot.is_occupied && spot.plate_image) {
+                photoCache[cacheKeySpot] = spot.plate_image;
+                btnFotoSpot = `
+                    <button class="btn btn-sm btn-outline-dark btn-photo-toggle ms-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-spot-${spot.id}" title="Ver foto de la placa en esta plaza">
+                        <i class="fas fa-camera text-primary"></i>
+                    </button>
+                `;
+                filaFotoSpot = `
+                    <tr class="collapse" id="collapse-spot-${spot.id}">
+                        <td colspan="5" class="p-2">
+                            <div class="plate-capture-box d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="${spot.plate_image}" alt="Placa ${spot.license_plate}" class="plate-capture-img" onclick="verFotoModal('${cacheKeySpot}', '${spot.license_plate}', '${horaEntrada}')">
+                                    <div>
+                                        <div class="small text-info fw-bold">Fotografia vinculada a Plaza ${spot.id}</div>
+                                        <div class="fs-5 fw-bold text-white">${spot.license_plate || 'Sin placa'}</div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-light" onclick="verFotoModal('${cacheKeySpot}', '${spot.license_plate}', '${horaEntrada}')">
+                                    <i class="fas fa-search-plus me-1"></i> Ampliar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+
             let badgePlaca = '<span class="text-muted small">-</span>';
             if (spot.is_occupied && spot.license_plate) {
-                badgePlaca = `<span class="badge bg-primary fs-6">${spot.license_plate}</span>`;
+                badgePlaca = `<span class="badge bg-primary fs-6">${spot.license_plate}</span>${btnFotoSpot}`;
             } else if (spot.is_occupied && !spot.license_plate) {
                 badgePlaca = `<span class="badge bg-warning text-dark">Sin placa</span>`;
             }
@@ -485,26 +608,57 @@ async function cargarCoincidencias() {
                         </button>
                     </div>
                 </td>
-            </tr>`;
+            </tr>
+            ${filaFotoSpot}`;
         }).join('');
 
-        // 3. Desplegable inferior: Historial discreto de eventos por plaza
+        // 3. Desplegable inferior: Historial discreto de eventos por plaza con foto
         const tbHistorialEventos = document.getElementById('tabla-historial-eventos');
         const eventos = (dataMatches.spot_events || []).filter(ev => ev.spot_id >= 1 && ev.spot_id <= 6);
         document.getElementById('badge-historial-eventos').textContent = eventos.length;
 
         if (eventos.length === 0) {
-            tbHistorialEventos.innerHTML = '<tr><td colspan="3" class="text-center text-muted p-3">Sin eventos historicos registrados</td></tr>';
+            tbHistorialEventos.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">Sin eventos historicos registrados</td></tr>';
         } else {
             tbHistorialEventos.innerHTML = eventos.map(ev => {
+                const horaEv = new Date(ev.occupied_at).toLocaleTimeString('es-CO');
                 const badgeEv = ev.license_plate
                     ? `<span class="badge bg-success">${ev.license_plate}</span>`
                     : `<span class="badge bg-secondary">Sin asignar</span>`;
+
+                const cacheKeyEv = `ev_${ev.id}`;
+                let btnFotoEv = '<span class="text-muted">Sin captura</span>';
+                let filaFotoEv = '';
+
+                if (ev.plate_image) {
+                    photoCache[cacheKeyEv] = ev.plate_image;
+                    btnFotoEv = `
+                        <button class="btn btn-sm btn-outline-info btn-photo-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-ev-${ev.id}">
+                            <i class="fas fa-camera me-1"></i> Desplegar foto
+                        </button>
+                    `;
+                    filaFotoEv = `
+                        <tr class="collapse" id="collapse-ev-${ev.id}">
+                            <td colspan="4" class="p-2">
+                                <div class="plate-capture-box d-flex align-items-center gap-3">
+                                    <img src="${ev.plate_image}" alt="Placa" class="plate-capture-img" onclick="verFotoModal('${cacheKeyEv}', '${ev.license_plate || ''}', '${horaEv}')">
+                                    <div>
+                                        <div class="small text-info fw-bold">Plaza ${ev.spot_id} - ${horaEv}</div>
+                                        <div class="fw-bold text-white">${ev.license_plate || 'Sin placa'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
                 return `<tr>
                     <td class="ps-3"><strong>Plaza ${ev.spot_id}</strong></td>
-                    <td>${new Date(ev.occupied_at).toLocaleTimeString('es-CO')}</td>
+                    <td>${horaEv}</td>
                     <td>${badgeEv}</td>
-                </tr>`;
+                    <td class="pe-3">${btnFotoEv}</td>
+                </tr>
+                ${filaFotoEv}`;
             }).join('');
         }
     } catch (err) {

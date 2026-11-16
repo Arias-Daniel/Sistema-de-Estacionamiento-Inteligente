@@ -6,7 +6,8 @@ const ExcelJS = require("exceljs");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 // --- CONFIGURACION DINAMICA DE TARIFAS ---
@@ -79,7 +80,7 @@ app.get("/api/records", async (req, res) => {
 
 // 3. Registrar ENTRADA manual
 app.post("/api/entry", async (req, res) => {
-    const { spot_id, license_plate } = req.body;
+    const { spot_id, license_plate, plate_image } = req.body;
     const entry_time = new Date().toISOString();
 
     try {
@@ -88,7 +89,8 @@ app.post("/api/entry", async (req, res) => {
             .update({
                 is_occupied: true,
                 license_plate: license_plate,
-                entry_time: entry_time
+                entry_time: entry_time,
+                plate_image: plate_image || null
             })
             .eq("id", spot_id);
 
@@ -100,7 +102,8 @@ app.post("/api/entry", async (req, res) => {
                 .insert([{
                     license_plate: license_plate,
                     entry_time: entry_time,
-                    status: "En estacionamiento"
+                    status: "En estacionamiento",
+                    plate_image: plate_image || null
                 }]);
 
             if (insertError) throw insertError;
@@ -133,7 +136,7 @@ app.post("/api/exit", async (req, res) => {
 
         const { error: updateSpotError } = await supabase
             .from("parking_spots")
-            .update({ is_occupied: false, license_plate: null, entry_time: null })
+            .update({ is_occupied: false, license_plate: null, entry_time: null, plate_image: null })
             .eq("id", spot_id);
 
         if (updateSpotError) throw updateSpotError;
@@ -306,12 +309,12 @@ app.post("/api/settings", (req, res) => {
 });
 
 // ============================================================
-// ENDPOINTS — SISTEMA DE COINCIDENCIAS Y CONTROL ADMIN
+// ENDPOINTS — SISTEMA DE COINCIDENCIAS, FOTOS Y CONTROL ADMIN
 // ============================================================
 
-// 11. Camara reporta que vio una placa entrando
+// 11. Camara reporta que vio una placa entrando junto con su fotografia
 app.post("/api/vehicle-seen", async (req, res) => {
-    const { license_plate } = req.body;
+    const { license_plate, plate_image } = req.body;
     if (!license_plate) return res.status(400).json({ error: "Falta license_plate" });
 
     const plateClean = license_plate.trim().toUpperCase();
@@ -319,10 +322,15 @@ app.post("/api/vehicle-seen", async (req, res) => {
     try {
         const { error } = await supabase
             .from("vehicle_sightings")
-            .insert([{ license_plate: plateClean, seen_at: new Date().toISOString(), matched: false }]);
+            .insert([{
+                license_plate: plateClean,
+                plate_image: plate_image || null,
+                seen_at: new Date().toISOString(),
+                matched: false
+            }]);
 
         if (error) throw error;
-        res.json({ message: "Placa registrada en entrada", license_plate: plateClean });
+        res.json({ message: "Placa y captura registradas en entrada", license_plate: plateClean });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -359,7 +367,8 @@ app.post("/api/spot-occupied", async (req, res) => {
             .insert([{
                 spot_id,
                 occupied_at,
-                license_plate: best_match ? best_match.license_plate : null
+                license_plate: best_match ? best_match.license_plate : null,
+                plate_image: best_match ? best_match.plate_image : null
             }]);
 
         if (eventError) throw eventError;
@@ -372,7 +381,10 @@ app.post("/api/spot-occupied", async (req, res) => {
 
             await supabase
                 .from("parking_spots")
-                .update({ license_plate: best_match.license_plate })
+                .update({
+                    license_plate: best_match.license_plate,
+                    plate_image: best_match.plate_image || null
+                })
                 .eq("id", spot_id);
 
             await supabase
@@ -380,7 +392,8 @@ app.post("/api/spot-occupied", async (req, res) => {
                 .insert([{
                     license_plate: best_match.license_plate,
                     entry_time: occupied_at,
-                    status: "En estacionamiento"
+                    status: "En estacionamiento",
+                    plate_image: best_match.plate_image || null
                 }]);
         }
 
@@ -420,7 +433,7 @@ app.get("/api/matches", async (req, res) => {
     }
 });
 
-// 14. Confirmar o asignar manualmente una coincidencia placa-plaza
+// 14. Confirmar o asignar manualmente una coincidencia placa-plaza (conservando la foto)
 app.post("/api/confirm-match", async (req, res) => {
     const { spot_id, license_plate, sighting_id } = req.body;
     if (!spot_id || !license_plate) {
@@ -433,40 +446,63 @@ app.post("/api/confirm-match", async (req, res) => {
     try {
         const { data: currentSpot } = await supabase
             .from("parking_spots")
-            .select("entry_time")
+            .select("entry_time, plate_image")
             .eq("id", spot_id)
             .single();
 
         const entryTime = (currentSpot && currentSpot.entry_time) ? currentSpot.entry_time : nowIso;
+        let capturedImage = currentSpot ? currentSpot.plate_image : null;
+
+        if (sighting_id) {
+            const { data: sightingData } = await supabase
+                .from("vehicle_sightings")
+                .select("plate_image")
+                .eq("id", sighting_id)
+                .maybeSingle();
+
+            if (sightingData && sightingData.plate_image) {
+                capturedImage = sightingData.plate_image;
+            }
+
+            await supabase
+                .from("vehicle_sightings")
+                .update({ matched: true })
+                .eq("id", sighting_id);
+        } else {
+            const { data: latestSighting } = await supabase
+                .from("vehicle_sightings")
+                .select("id, plate_image")
+                .eq("license_plate", plateClean)
+                .order("seen_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (latestSighting) {
+                if (latestSighting.plate_image) capturedImage = latestSighting.plate_image;
+                await supabase
+                    .from("vehicle_sightings")
+                    .update({ matched: true })
+                    .eq("id", latestSighting.id);
+            }
+        }
 
         await supabase
             .from("parking_spots")
             .update({
                 is_occupied: true,
                 license_plate: plateClean,
-                entry_time: entryTime
+                entry_time: entryTime,
+                plate_image: capturedImage
             })
             .eq("id", spot_id);
-
-        if (sighting_id) {
-            await supabase
-                .from("vehicle_sightings")
-                .update({ matched: true })
-                .eq("id", sighting_id);
-        } else {
-            await supabase
-                .from("vehicle_sightings")
-                .update({ matched: true })
-                .eq("license_plate", plateClean)
-                .eq("matched", false);
-        }
 
         await supabase
             .from("spot_events")
             .insert([{
                 spot_id: parseInt(spot_id),
                 occupied_at: entryTime,
-                license_plate: plateClean
+                license_plate: plateClean,
+                plate_image: capturedImage
             }]);
 
         const { data: existing } = await supabase
@@ -482,8 +518,14 @@ app.post("/api/confirm-match", async (req, res) => {
                 .insert([{
                     license_plate: plateClean,
                     entry_time: entryTime,
-                    status: "En estacionamiento"
+                    status: "En estacionamiento",
+                    plate_image: capturedImage
                 }]);
+        } else if (capturedImage) {
+            await supabase
+                .from("parking_records")
+                .update({ plate_image: capturedImage })
+                .eq("id", existing.id);
         }
 
         res.json({ message: "Placa asignada correctamente", spot_id, license_plate: plateClean });
@@ -509,20 +551,36 @@ app.post("/api/update-spot-plate", async (req, res) => {
 
         const oldPlate = spot ? spot.license_plate : null;
         const entryTime = (spot && spot.entry_time) ? spot.entry_time : nowIso;
+        let plateImage = spot ? spot.plate_image : null;
+
+        if (plateClean && plateClean !== oldPlate) {
+            const { data: sightingImg } = await supabase
+                .from("vehicle_sightings")
+                .select("plate_image")
+                .eq("license_plate", plateClean)
+                .order("seen_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (sightingImg && sightingImg.plate_image) {
+                plateImage = sightingImg.plate_image;
+            }
+        }
 
         await supabase
             .from("parking_spots")
             .update({
                 is_occupied: Boolean(plateClean),
                 license_plate: plateClean,
-                entry_time: plateClean ? entryTime : null
+                entry_time: plateClean ? entryTime : null,
+                plate_image: plateClean ? plateImage : null
             })
             .eq("id", spot_id);
 
         if (oldPlate && plateClean && oldPlate !== plateClean) {
             await supabase
                 .from("parking_records")
-                .update({ license_plate: plateClean })
+                .update({ license_plate: plateClean, plate_image: plateImage })
                 .eq("license_plate", oldPlate)
                 .eq("status", "En estacionamiento");
         } else if (!oldPlate && plateClean) {
@@ -531,7 +589,8 @@ app.post("/api/update-spot-plate", async (req, res) => {
                 .insert([{
                     license_plate: plateClean,
                     entry_time: entryTime,
-                    status: "En estacionamiento"
+                    status: "En estacionamiento",
+                    plate_image: plateImage
                 }]);
         }
 
@@ -541,7 +600,7 @@ app.post("/api/update-spot-plate", async (req, res) => {
     }
 });
 
-// 16. Mover o intercambiar placas entre dos plazas a voluntad
+// 16. Mover o intercambiar placas (y sus fotos) entre dos plazas a voluntad
 app.post("/api/move-plate", async (req, res) => {
     const { from_spot_id, to_spot_id } = req.body;
     if (!from_spot_id || !to_spot_id || from_spot_id == to_spot_id) {
@@ -561,13 +620,13 @@ app.post("/api/move-plate", async (req, res) => {
         const fromSpot = spots.find(s => s.id == from_spot_id);
         const toSpot = spots.find(s => s.id == to_spot_id);
 
-        // Intercambiar estado y placa entre origen y destino
         await supabase
             .from("parking_spots")
             .update({
                 is_occupied: fromSpot.is_occupied,
                 license_plate: fromSpot.license_plate,
-                entry_time: fromSpot.entry_time || new Date().toISOString()
+                entry_time: fromSpot.entry_time || new Date().toISOString(),
+                plate_image: fromSpot.plate_image || null
             })
             .eq("id", to_spot_id);
 
@@ -576,7 +635,8 @@ app.post("/api/move-plate", async (req, res) => {
             .update({
                 is_occupied: toSpot.is_occupied,
                 license_plate: toSpot.license_plate,
-                entry_time: toSpot.entry_time
+                entry_time: toSpot.entry_time,
+                plate_image: toSpot.plate_image || null
             })
             .eq("id", from_spot_id);
 
@@ -590,7 +650,7 @@ app.post("/api/move-plate", async (req, res) => {
     }
 });
 
-// 17. Limpiar datos de coincidencias (placas en espera, historial de eventos o todo)
+// 17. Limpiar datos de coincidencias
 app.post("/api/clear-matches", async (req, res) => {
     const { target, sighting_id } = req.body;
 
