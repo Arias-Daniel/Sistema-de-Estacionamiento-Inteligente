@@ -323,18 +323,20 @@ document.getElementById('exportBtn').addEventListener('click', (e) => {
 const navInicio          = document.getElementById('nav-inicio');
 const navHistorial       = document.getElementById('nav-historial');
 const navCoincidencias   = document.getElementById('nav-coincidencias');
+const navTalanquera      = document.getElementById('nav-talanquera');
 const navConfiguracion   = document.getElementById('nav-configuracion');
 
 const vistaInicio        = document.getElementById('vista-inicio');
 const vistaHistorial     = document.getElementById('vista-historial');
 const vistaCoincidencias = document.getElementById('vista-coincidencias');
+const vistaTalanquera    = document.getElementById('vista-talanquera');
 const vistaConfiguracion = document.getElementById('vista-configuracion');
 
 function cambiarVista(vistaActiva, navActivo) {
-    [vistaInicio, vistaHistorial, vistaCoincidencias, vistaConfiguracion]
-        .forEach(v => v.classList.add('d-none'));
-    [navInicio, navHistorial, navCoincidencias, navConfiguracion]
-        .forEach(n => n.classList.remove('active'));
+    [vistaInicio, vistaHistorial, vistaCoincidencias, vistaTalanquera, vistaConfiguracion]
+        .forEach(v => v && v.classList.add('d-none'));
+    [navInicio, navHistorial, navCoincidencias, navTalanquera, navConfiguracion]
+        .forEach(n => n && n.classList.remove('active'));
 
     vistaActiva.classList.remove('d-none');
     navActivo.classList.add('active');
@@ -351,6 +353,16 @@ navHistorial.addEventListener('click', (e) => {
     cambiarVista(vistaHistorial, navHistorial);
     updateRecordsTable(currentStartDate, currentEndDate);
 });
+
+if (navTalanquera) {
+    navTalanquera.addEventListener('click', (e) => {
+        e.preventDefault();
+        cambiarVista(vistaTalanquera, navTalanquera);
+        if (window.TalanqueraTwin) {
+            window.TalanqueraTwin.activar();
+        }
+    });
+}
 
 navConfiguracion.addEventListener('click', async (e) => { 
     e.preventDefault(); 
